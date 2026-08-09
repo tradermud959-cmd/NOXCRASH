@@ -27,6 +27,9 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.ui.graphics.Brush
 import com.example.ui.theme.*
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -64,12 +67,12 @@ fun HomeScreen(navController: NavController) {
                 Box(modifier = Modifier.weight(1f)) {
                     ActionCard(
                         title = "🛒 SHOP",
-                        subtitle = "SEGERA HADIR",
+                        subtitle = "MINER MARKET",
                         color = ColorShop,
                         backgroundColor = ShopCardBg,
                         borderColor = Color(0x33F59E0B),
                         onClick = {
-                            Toast.makeText(context, "Miner Shop sedang dalam pengembangan.", Toast.LENGTH_SHORT).show()
+                            navController.navigate("shop")
                         }
                     )
                 }
@@ -86,6 +89,38 @@ fun HomeScreen(navController: NavController) {
 
 @Composable
 fun MiningCard() {
+    val miningStatus by MiningManager.miningStatus.collectAsState()
+    val activeMiner by MiningManager.activeMiner.collectAsState()
+    var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(miningStatus) {
+        if (miningStatus == MiningStatus.ACTIVE) {
+            while (true) {
+                delay(1000)
+                currentTime = System.currentTimeMillis()
+                MiningManager.refreshState()
+            }
+        }
+    }
+
+    val pickaxeRotation = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(miningStatus) {
+        if (miningStatus == MiningStatus.ACTIVE) {
+            while (true) {
+                pickaxeRotation.animateTo(
+                    targetValue = 30f,
+                    animationSpec = androidx.compose.animation.core.tween(500)
+                )
+                pickaxeRotation.animateTo(
+                    targetValue = -10f,
+                    animationSpec = androidx.compose.animation.core.tween(500)
+                )
+            }
+        } else {
+            pickaxeRotation.snapTo(0f)
+        }
+    }
+
     val gradientBrush = androidx.compose.ui.graphics.Brush.linearGradient(
         colors = listOf(MiningCardStart, MiningCardEnd)
     )
@@ -103,47 +138,108 @@ fun MiningCard() {
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "⛏️ MINING",
-                color = ColorMining,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                letterSpacing = 1.sp
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "0.00000000 NX",
-                color = TextPrimary,
-                fontWeight = FontWeight.Bold,
-                fontSize = 28.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "⚡ 0.000000000 NX/s",
-                color = ColorMining.copy(alpha = 0.8f),
-                fontSize = 14.sp
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp)
-                    .background(DarkSurfaceVariant, RoundedCornerShape(2.dp))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.3f)
-                        .height(4.dp)
-                        .background(ColorMining, RoundedCornerShape(2.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "⛏️",
+                    fontSize = 18.sp,
+                    modifier = Modifier.graphicsLayer(rotationZ = pickaxeRotation.value)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (miningStatus == MiningStatus.ACTIVE) activeMiner?.name?.uppercase() ?: "MINING ACTIVE" else "MINING OFF",
+                    color = ColorMining,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    letterSpacing = 1.sp
                 )
             }
+            
             Spacer(modifier = Modifier.height(16.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("MINING PREVIEW", color = TextSecondary, fontSize = 12.sp)
-                Text("24 JAM", color = TextSecondary, fontSize = 12.sp)
+            
+            if (miningStatus == MiningStatus.ACTIVE && activeMiner != null) {
+                val miner = activeMiner!!
+                val totalDurationMs = miner.durationHours * 60 * 60 * 1000
+                val elapsedMs = currentTime - miner.startedAt
+                val remainingMs = miner.endsAt - currentTime
+                val progress = (elapsedMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
+                
+                val remainingSeconds = (remainingMs / 1000).coerceAtLeast(0)
+                val hours = remainingSeconds / 3600
+                val minutes = (remainingSeconds % 3600) / 60
+                val seconds = remainingSeconds % 60
+                val timeString = String.format("%02d:%02d:%02d", hours, minutes, seconds)
+                
+                val currentReward = (miner.reward.toFloat() * progress).toBigDecimal()
+                
+                Text(
+                    text = String.format(java.util.Locale.US, "%.8f NX", currentReward),
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 28.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "${miner.reward.toPlainString()} NX / ${miner.durationHours} JAM",
+                    color = ColorMining.copy(alpha = 0.8f),
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .background(DarkSurfaceVariant, RoundedCornerShape(2.dp))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .height(4.dp)
+                            .background(ColorMining, RoundedCornerShape(2.dp))
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("$timeString tersisa", color = TextSecondary, fontSize = 12.sp)
+                    Text("${(progress * 100).toInt()}%", color = TextSecondary, fontSize = 12.sp)
+                }
+            } else if (miningStatus == MiningStatus.COMPLETED) {
+                Text(
+                    text = "MINING SELESAI",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "${activeMiner?.reward?.toPlainString() ?: "0"} NX SIAP DIKLAIM",
+                    color = ColorMining,
+                    fontSize = 14.sp
+                )
+            } else {
+                Text(
+                    text = "0.00000000 NX",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 28.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "0 NX/JAM",
+                    color = ColorMining.copy(alpha = 0.8f),
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .background(DarkSurfaceVariant, RoundedCornerShape(2.dp))
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Beli miner di Shop untuk memulai", color = TextSecondary, fontSize = 12.sp)
             }
         }
     }
@@ -335,6 +431,21 @@ fun MusicPlayerCard(navController: NavController) {
 
 @Composable
 fun ActiveMinersCard() {
+    val miningStatus by MiningManager.miningStatus.collectAsState()
+    val activeMiner by MiningManager.activeMiner.collectAsState()
+    var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val coroutineScope = rememberCoroutineScope()
+    var isClaiming by remember { mutableStateOf(false) }
+
+    LaunchedEffect(miningStatus) {
+        if (miningStatus == MiningStatus.ACTIVE) {
+            while (true) {
+                delay(1000)
+                currentTime = System.currentTimeMillis()
+            }
+        }
+    }
+
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = ActiveMinersCardBg),
@@ -354,18 +465,99 @@ fun ActiveMinersCard() {
                 fontSize = 14.sp
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text("Belum ada miner yang aktif.", color = TextSecondary, fontSize = 14.sp)
+            
+            if (miningStatus == MiningStatus.OFF || activeMiner == null) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Belum ada miner yang aktif.", color = TextSecondary, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "Pergi ke Miner Shop untuk membeli miner.",
+                        color = TextSecondary,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                val miner = activeMiner!!
+                val isCompleted = miningStatus == MiningStatus.COMPLETED
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "⛏️ ${miner.name}",
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = if (isCompleted) "Status: MINING SELESAI" else "Status: MINING",
+                    color = if (isCompleted) Color(0xFF64DD17) else ColorMining,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    "Sistem mining akan tersedia pada pengembangan berikutnya.",
+                    text = "Reward: ${miner.reward.toPlainString()} NX / ${miner.durationHours} JAM",
                     color = TextSecondary,
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center
+                    fontSize = 14.sp
                 )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                if (isCompleted) {
+                    Button(
+                        onClick = {
+                            if (!isClaiming) {
+                                isClaiming = true
+                                val success = MiningManager.claimReward()
+                                // No snackbar host easily available here without hoist, but balance updates instantly
+                                coroutineScope.launch {
+                                    delay(500)
+                                    isClaiming = false
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF64DD17)),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("CLAIM ${miner.reward.toPlainString()} NX", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    val totalDurationMs = miner.durationHours * 60 * 60 * 1000
+                    val elapsedMs = currentTime - miner.startedAt
+                    val remainingMs = miner.endsAt - currentTime
+                    val progress = (elapsedMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
+                    
+                    val remainingSeconds = (remainingMs / 1000).coerceAtLeast(0)
+                    val hours = remainingSeconds / 3600
+                    val minutes = (remainingSeconds % 3600) / 60
+                    val seconds = remainingSeconds % 60
+                    val timeString = String.format("%02d:%02d:%02d", hours, minutes, seconds)
+                    
+                    Text("Progress: ${(progress * 100).toInt()}%", color = TextSecondary, fontSize = 14.sp)
+                    Text("Sisa: $timeString", color = TextSecondary, fontSize = 14.sp)
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .background(DarkSurfaceVariant, RoundedCornerShape(4.dp))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(progress)
+                                .height(8.dp)
+                                .background(ColorMining, RoundedCornerShape(4.dp))
+                        )
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
         }

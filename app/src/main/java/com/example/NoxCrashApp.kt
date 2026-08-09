@@ -110,6 +110,7 @@ fun NoxCrashApp() {
                     composable("riwayat") { MinerHistoryScreen(navController) }
                     composable("pengaturan") { SettingsScreen(navController) }
                     composable("musik") { MusicListScreen(navController) }
+                    composable("shop") { MinerShopScreen(navController) }
                 }
             }
         }

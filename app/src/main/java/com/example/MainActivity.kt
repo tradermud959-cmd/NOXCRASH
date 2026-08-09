@@ -11,6 +11,7 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     ProfileManager.init(this)
     MusicPlayerManager.init(this)
+    MiningManager.init(this)
     enableEdgeToEdge()
     setContent {
       NoxCrashTheme {

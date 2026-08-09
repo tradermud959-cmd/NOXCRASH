@@ -50,6 +50,38 @@ object ProfileManager {
         _profileData.value = data
     }
     
+    fun addBalance(amountToAdd: java.math.BigDecimal): Boolean {
+        val currentStr = _profileData.value.balance.replace(" NX", "")
+        return try {
+            val currentDec = java.math.BigDecimal(currentStr)
+            val newBalance = currentDec.add(amountToAdd)
+            val newBalanceStr = String.format(java.util.Locale.US, "%.8f NX", newBalance)
+            saveProfile(_profileData.value.copy(balance = newBalanceStr))
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+    
+    fun updateBalance(amountToSubtract: java.math.BigDecimal): Boolean {
+        val currentStr = _profileData.value.balance.replace(" NX", "")
+        return try {
+            val currentDec = java.math.BigDecimal(currentStr)
+            if (currentDec >= amountToSubtract) {
+                val newBalance = currentDec.subtract(amountToSubtract)
+                val newBalanceStr = String.format(java.util.Locale.US, "%.8f NX", newBalance)
+                saveProfile(_profileData.value.copy(balance = newBalanceStr))
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+    
     fun copyImageToInternalStorage(uri: Uri, isCover: Boolean): String? {
         return try {
             val inputStream = appContext.contentResolver.openInputStream(uri) ?: return null

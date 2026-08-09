@@ -1,0 +1,6 @@
+{
+  "name": "NoxCrash",
+  "description": "Offline native Android mining game UI",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

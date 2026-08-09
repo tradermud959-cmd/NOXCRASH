@@ -27,6 +27,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 
+enum class NotificationType { ERROR, WARNING, SUCCESS }
+
+data class ShopNotification(
+    val type: NotificationType,
+    val title: String,
+    val message: String
+)
+
 @Composable
 fun MinerShopScreen(navController: NavController) {
     val profileData by ProfileManager.profileData.collectAsState()
@@ -34,55 +42,78 @@ fun MinerShopScreen(navController: NavController) {
     val activeMiner by MiningManager.activeMiner.collectAsState()
     val lastFreeMinerUsedAt by MiningManager.lastFreeMinerUsedAt.collectAsState()
     
-    var showWarning by remember { mutableStateOf(false) }
+    var currentNotification by remember { mutableStateOf<ShopNotification?>(null) }
+    var notificationId by remember { mutableStateOf(0) }
+    
     val coroutineScope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         MiningManager.refreshState()
     }
+    
+    LaunchedEffect(notificationId) {
+        if (currentNotification != null) {
+            delay(3000)
+            currentNotification = null
+        }
+    }
+    
+    fun showNotification(type: NotificationType, title: String, message: String) {
+        currentNotification = ShopNotification(type, title, message)
+        notificationId++
+    }
 
     val onPurchaseClick = { price: String, minerId: String, minerName: String, reward: String ->
         if (miningStatus != MiningStatus.OFF) {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Miner masih aktif. Tunggu sampai mining selesai sebelum membeli miner berikutnya.")
-            }
+            showNotification(
+                type = NotificationType.WARNING,
+                title = "⚠️ MINER MASIH AKTIF",
+                message = "Miner masih aktif. Tunggu sampai mining selesai."
+            )
         } else {
             val priceDec = BigDecimal(price)
             val success = ProfileManager.updateBalance(priceDec)
             if (success) {
                 val rewardDec = BigDecimal(reward)
                 MiningManager.startMining(minerId, minerName, rewardDec, 24)
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Miner $minerName berhasil dibeli.")
-                }
+                showNotification(
+                    type = NotificationType.SUCCESS,
+                    title = "⛏️ MINER AKTIF",
+                    message = "$minerName berhasil dibeli dan mulai mining."
+                )
             } else {
-                showWarning = true
-                coroutineScope.launch {
-                    delay(3000)
-                    showWarning = false
-                }
+                showNotification(
+                    type = NotificationType.ERROR,
+                    title = "☠️ WADUH",
+                    message = "Gak cukup bjir, mining dulu sana yang free\uD83D\uDE39"
+                )
             }
         }
     }
     
     val onFreeMinerClick: () -> Unit = {
         if (miningStatus != MiningStatus.OFF) {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Miner masih aktif. Tunggu sampai mining selesai.")
-            }
+            showNotification(
+                type = NotificationType.WARNING,
+                title = "⚠️ MINER MASIH AKTIF",
+                message = "Miner masih aktif. Tunggu sampai mining selesai."
+            )
         } else {
             val currentTime = System.currentTimeMillis()
             val cooldownMs = 2L * 24 * 60 * 60 * 1000 // 2 days
             if (currentTime - lastFreeMinerUsedAt >= cooldownMs) {
                 MiningManager.startMining("free_miner", "Free Miner", BigDecimal("2"), 24)
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Free Miner diaktifkan")
-                }
+                showNotification(
+                    type = NotificationType.SUCCESS,
+                    title = "⛏️ MINING DIMULAI",
+                    message = "Free Miner berhasil diaktifkan."
+                )
             } else {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Free Miner masih dalam cooldown.")
-                }
+                showNotification(
+                    type = NotificationType.WARNING,
+                    title = "⚠️ COOLDOWN",
+                    message = "Free Miner masih dalam cooldown."
+                )
             }
         }
     }
@@ -91,7 +122,6 @@ fun MinerShopScreen(navController: NavController) {
         topBar = {
             TopBarWithBack(title = "MINER SHOP", navController = navController, color = ColorShop)
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = DarkBackground
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
@@ -248,40 +278,44 @@ fun MinerShopScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
-            // Warning Card Overlay
+            // Custom Notification Card Overlay
             AnimatedVisibility(
-                visible = showWarning,
+                visible = currentNotification != null,
                 enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
                 exit = fadeOut() + slideOutVertically(targetOffsetY = { -it }),
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(top = 16.dp, start = 16.dp, end = 16.dp)
             ) {
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF141011)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, WarningRed, RoundedCornerShape(12.dp))
-                ) {
-                    Row(
+                currentNotification?.let { notification ->
+                    val strokeColor = when (notification.type) {
+                        NotificationType.ERROR -> WarningRed
+                        NotificationType.WARNING -> Color(0xFFFF9800)
+                        NotificationType.SUCCESS -> Color(0xFF64DD17)
+                    }
+                    
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF141011)),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .border(3.dp, strokeColor.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+                            .border(1.dp, strokeColor, RoundedCornerShape(16.dp))
                     ) {
-                        Text("☠️", fontSize = 24.sp)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
                             Text(
-                                text = "WADUH",
-                                color = WarningRed,
+                                text = notification.title,
+                                color = strokeColor,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Gak cukup bjir, mining dulu sana yang free\uD83D\uDE39",
+                                text = notification.message,
                                 color = TextPrimary,
                                 fontSize = 14.sp,
                                 lineHeight = 20.sp

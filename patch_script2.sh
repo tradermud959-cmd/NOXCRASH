@@ -1,0 +1,1 @@
+sed -i 's/import androidx.compose.material3.\*/import androidx.compose.material3.*\nimport androidx.compose.material3.TabRow\nimport androidx.compose.material3.Tab/' app/src/main/java/com/example/MinerShopScreen.kt

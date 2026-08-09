@@ -109,6 +109,7 @@ fun NoxCrashApp() {
                     composable("notifikasi") { NotificationScreen(navController) }
                     composable("statistik") { StatisticsScreen(navController) }
                     composable("riwayat") { HistoryScreen(navController) }
+                    composable("ai_riwayat") { AIHistoryScreen(navController) }
                     composable("pengaturan") { SettingsScreen(navController) }
                     composable("musik") { MusicListScreen(navController) }
                     composable("shop") { MinerShopScreen(navController) }
@@ -169,6 +170,7 @@ fun DrawerContent(
         DrawerItem(icon = { Text("🔔", fontSize = 18.sp) }, title = "Notifikasi", route = "notifikasi", currentRoute = currentRoute, onNavigate = onNavigate)
         DrawerItem(icon = { Text("📊", fontSize = 18.sp) }, title = "Statistik", route = "statistik", currentRoute = currentRoute, onNavigate = onNavigate)
         DrawerItem(icon = { Text("📜", fontSize = 18.sp) }, title = "Riwayat Miner", route = "riwayat", currentRoute = currentRoute, onNavigate = onNavigate)
+        DrawerItem(icon = { Text("🤖", fontSize = 18.sp) }, title = "Riwayat AI Mode", route = "ai_riwayat", currentRoute = currentRoute, onNavigate = onNavigate)
         DrawerItem(icon = { Text("⚙️", fontSize = 18.sp) }, title = "Pengaturan", route = "pengaturan", currentRoute = currentRoute, onNavigate = onNavigate)
     }
 }

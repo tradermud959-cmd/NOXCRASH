@@ -8,10 +8,16 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,13 +41,9 @@ data class ShopNotification(
     val message: String
 )
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun MinerShopScreen(navController: NavController) {
-    val profileData by ProfileManager.profileData.collectAsState()
-    val miningStatus by MiningManager.miningStatus.collectAsState()
-    val activeMiner by MiningManager.activeMiner.collectAsState()
-    val lastFreeMinerUsedAt by MiningManager.lastFreeMinerUsedAt.collectAsState()
-    
     var currentNotification by remember { mutableStateOf<ShopNotification?>(null) }
     var notificationId by remember { mutableStateOf(0) }
     
@@ -63,224 +65,57 @@ fun MinerShopScreen(navController: NavController) {
         notificationId++
     }
 
-    val onPurchaseClick = { price: String, minerId: String, minerName: String, reward: String ->
-        if (miningStatus != MiningStatus.OFF) {
-            showNotification(
-                type = NotificationType.WARNING,
-                title = "⚠️ MINER MASIH AKTIF",
-                message = "Miner masih aktif. Tunggu sampai mining selesai."
-            )
-        } else {
-            val priceDec = BigDecimal(price)
-            val success = ProfileManager.updateBalance(priceDec)
-            if (success) {
-                HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 ${minerName.uppercase()}", "Miner dibeli", "-$price NX")
-                StatisticsManager.addPurchase()
-                
-                val rewardDec = BigDecimal(reward)
-                MiningManager.startMining(minerId, minerName, rewardDec, 24)
-                showNotification(
-                    type = NotificationType.SUCCESS,
-                    title = "⛏️ MINER AKTIF",
-                    message = "$minerName berhasil dibeli dan mulai mining."
-                )
-            } else {
-                showNotification(
-                    type = NotificationType.ERROR,
-                    title = "☠️ WADUH",
-                    message = "Gak cukup bjir, mining dulu sana yang free\uD83D\uDE39"
-                )
-            }
-        }
-    }
-    
-    val onFreeMinerClick: () -> Unit = {
-        if (miningStatus != MiningStatus.OFF) {
-            showNotification(
-                type = NotificationType.WARNING,
-                title = "⚠️ MINER MASIH AKTIF",
-                message = "Miner masih aktif. Tunggu sampai mining selesai."
-            )
-        } else {
-            val currentTime = System.currentTimeMillis()
-            val cooldownMs = 2L * 24 * 60 * 60 * 1000 // 2 days
-            if (currentTime - lastFreeMinerUsedAt >= cooldownMs) {
-                MiningManager.startMining("free_miner", "Free Miner", BigDecimal("2"), 24)
-                showNotification(
-                    type = NotificationType.SUCCESS,
-                    title = "⛏️ MINING DIMULAI",
-                    message = "Free Miner berhasil diaktifkan."
-                )
-            } else {
-                showNotification(
-                    type = NotificationType.WARNING,
-                    title = "⚠️ COOLDOWN",
-                    message = "Free Miner masih dalam cooldown."
-                )
-            }
-        }
-    }
+    // Page 0: Miner Market
+    // Page 1: AI Mode
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
 
     Scaffold(
         topBar = {
-            TopBarWithBack(title = "MINER SHOP", navController = navController, color = ColorShop)
+            Column {
+                TopBarWithBack(
+                    title = if (pagerState.currentPage == 0) "MINER SHOP" else "AI MODE", 
+                    navController = navController, 
+                    color = if (pagerState.currentPage == 0) ColorShop else Color(0xFFE040FB)
+                )
+                TabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    containerColor = DarkBackground,
+                    contentColor = Color.White,
+                    indicator = { tabPositions ->
+                        if (pagerState.currentPage < tabPositions.size) {
+                            TabRowDefaults.SecondaryIndicator(
+                                Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                                color = if (pagerState.currentPage == 0) ColorShop else Color(0xFFE040FB)
+                            )
+                        }
+                    }
+                ) {
+                    Tab(
+                        selected = pagerState.currentPage == 0,
+                        onClick = { coroutineScope.launch { pagerState.animateScrollToPage(0) } },
+                        text = { Text("MINER MARKET", fontWeight = FontWeight.Bold, color = if (pagerState.currentPage == 0) ColorShop else TextSecondary) }
+                    )
+                    Tab(
+                        selected = pagerState.currentPage == 1,
+                        onClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } },
+                        text = { Text("AI MODE", fontWeight = FontWeight.Bold, color = if (pagerState.currentPage == 1) Color(0xFFE040FB) else TextSecondary) }
+                    )
+                }
+            }
         },
         containerColor = DarkBackground
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Wallet Balance Card
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = ProfileCardBg),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, Color(0x33F59E0B), RoundedCornerShape(16.dp))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "N",
-                                color = Color.Black,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                modifier = Modifier
-                                    .background(ColorShop, androidx.compose.foundation.shape.CircleShape)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "SALDO WALLET",
-                                color = ColorShop,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = profileData.balance,
-                            color = TextPrimary,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize()
+            ) { page ->
+                when (page) {
+                    0 -> MinerMarketPage(showNotification = ::showNotification)
+                    1 -> AIShopPage(showNotification = ::showNotification)
                 }
-
-                // Market Description Card
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1F1F24)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Text(
-                            text = "MINER MARKET",
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Temukan miner yang sesuai dengan strategi mining kamu. Setiap miner memiliki harga dan pendapatan berbeda. Semakin tinggi tier, semakin besar potensi pendapatan NX.",
-                            color = TextSecondary,
-                            fontSize = 12.sp,
-                            lineHeight = 18.sp
-                        )
-                    }
-                }
-
-                // Free Miner
-                MinerCard(
-                    minerId = "free_miner",
-                    name = "FREE MINER",
-                    description = "Miner gratis dengan kecepatan sangat rendah. Cocok sebagai pilihan ketika saldo NX habis.",
-                    priceLabel = "GRATIS",
-                    rewardLabel = "2 NX / 24 JAM",
-                    extraInfo = "Reward tersedia:\nSETIAP 2 HARI",
-                    accentColor = MinerFreeAccent,
-                    buttonText = "AKTIFKAN",
-                    onActionClick = onFreeMinerClick
-                )
-
-                // Basic Miner
-                MinerCard(
-                    minerId = "basic_miner",
-                    name = "BASIC MINER",
-                    description = "Miner standar untuk memulai perjalanan mining NX.",
-                    priceLabel = "25",
-                    rewardLabel = "5 NX / 24 JAM",
-                    accentColor = MinerBasicAccent,
-                    buttonText = "BELI",
-                    onActionClick = { onPurchaseClick("25", "basic_miner", "Basic Miner", "5") }
-                )
-
-                // Slow Miner
-                MinerCard(
-                    minerId = "slow_miner",
-                    name = "SLOW MINER",
-                    description = "Miner lambat dengan performa lebih baik dari Basic Miner.",
-                    priceLabel = "100",
-                    rewardLabel = "25 NX / 24 JAM",
-                    accentColor = MinerSlowAccent,
-                    buttonText = "BELI",
-                    onActionClick = { onPurchaseClick("100", "slow_miner", "Slow Miner", "25") }
-                )
-
-                // Fast Miner
-                MinerCard(
-                    minerId = "fast_miner",
-                    name = "FAST MINER",
-                    description = "Miner cepat untuk meningkatkan produksi NX secara signifikan.",
-                    priceLabel = "400",
-                    rewardLabel = "120 NX / 24 JAM",
-                    accentColor = MinerFastAccent,
-                    buttonText = "BELI",
-                    onActionClick = { onPurchaseClick("400", "fast_miner", "Fast Miner", "120") }
-                )
-
-                // Ultra Miner
-                MinerCard(
-                    minerId = "ultra_miner",
-                    name = "ULTRA MINER",
-                    description = "Miner kelas tinggi dengan kemampuan produksi NX yang jauh lebih besar.",
-                    priceLabel = "1500",
-                    rewardLabel = "550 NX / 24 JAM",
-                    accentColor = MinerUltraAccent,
-                    buttonText = "BELI",
-                    onActionClick = { onPurchaseClick("1500", "ultra_miner", "Ultra Miner", "550") }
-                )
-
-                // Void Miner
-                MinerCard(
-                    minerId = "void_miner",
-                    name = "VOID MINER",
-                    description = "Miner kelas ekstrem yang menggunakan kekuatan Void untuk menghasilkan NX dalam jumlah besar.",
-                    priceLabel = "4000",
-                    rewardLabel = "2.000 NX / 24 JAM",
-                    accentColor = MinerVoidAccent,
-                    buttonText = "BELI",
-                    isSpecial = true,
-                    onActionClick = { onPurchaseClick("4000", "void_miner", "Void Miner", "2000") }
-                )
-                
-                Spacer(modifier = Modifier.height(32.dp))
             }
-
+            
             // Custom Notification Card Overlay
             AnimatedVisibility(
                 visible = currentNotification != null,
@@ -328,6 +163,238 @@ fun MinerShopScreen(navController: NavController) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun MinerMarketPage(showNotification: (NotificationType, String, String) -> Unit) {
+    val profileData by ProfileManager.profileData.collectAsState()
+    val miningStatus by MiningManager.miningStatus.collectAsState()
+    val aiState by AIManager.aiState.collectAsState()
+    val activeMiner by MiningManager.activeMiner.collectAsState()
+    val lastFreeMinerUsedAt by MiningManager.lastFreeMinerUsedAt.collectAsState()
+
+    val onPurchaseClick = { price: String, minerId: String, minerName: String, reward: String ->
+        if (miningStatus != MiningStatus.OFF) {
+            showNotification(
+                NotificationType.WARNING,
+                "⚠️ MINER MASIH AKTIF",
+                "Miner masih aktif. Tunggu sampai mining selesai."
+            )
+        } else if (aiState != AIState.NO_AI) {
+            showNotification(
+                NotificationType.WARNING,
+                "AI MODE MASIH AKTIF ☠️",
+                "Nonaktifkan AI Mode terlebih dahulu sebelum mengaktifkan miner."
+            )
+        } else {
+            val priceDec = BigDecimal(price)
+            val success = ProfileManager.updateBalance(priceDec)
+            if (success) {
+                HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 ${minerName.uppercase()}", "Miner dibeli", "-$price NX")
+                StatisticsManager.addPurchase()
+                
+                val rewardDec = BigDecimal(reward)
+                MiningManager.startMining(minerId, minerName, rewardDec, 24)
+                showNotification(
+                    NotificationType.SUCCESS,
+                    "⛏️ MINER AKTIF",
+                    "$minerName berhasil dibeli dan mulai mining."
+                )
+            } else {
+                showNotification(
+                    NotificationType.ERROR,
+                    "☠️ WADUH",
+                    "Gak cukup bjir, mining dulu sana yang free\uD83D\uDE39"
+                )
+            }
+        }
+    }
+    
+    val onFreeMinerClick: () -> Unit = {
+        if (miningStatus != MiningStatus.OFF) {
+            showNotification(
+                NotificationType.WARNING,
+                "⚠️ MINER MASIH AKTIF",
+                "Miner masih aktif. Tunggu sampai mining selesai."
+            )
+        } else if (aiState != AIState.NO_AI) {
+            showNotification(
+                NotificationType.WARNING,
+                "AI MODE MASIH AKTIF ☠️",
+                "Nonaktifkan AI Mode terlebih dahulu sebelum mengaktifkan miner."
+            )
+        } else {
+            val currentTime = System.currentTimeMillis()
+            val cooldownMs = 2L * 24 * 60 * 60 * 1000 // 2 days
+            if (currentTime - lastFreeMinerUsedAt >= cooldownMs) {
+                MiningManager.startMining("free_miner", "Free Miner", BigDecimal("2"), 24)
+                showNotification(
+                    NotificationType.SUCCESS,
+                    "⛏️ MINING DIMULAI",
+                    "Free Miner berhasil diaktifkan."
+                )
+            } else {
+                showNotification(
+                    NotificationType.WARNING,
+                    "⚠️ COOLDOWN",
+                    "Free Miner masih dalam cooldown."
+                )
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Wallet Balance Card
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = ProfileCardBg),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, Color(0x33F59E0B), RoundedCornerShape(16.dp))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "N",
+                        color = Color.Black,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier
+                            .background(ColorShop, androidx.compose.foundation.shape.CircleShape)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "SALDO WALLET",
+                        color = ColorShop,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = profileData.balance,
+                    color = TextPrimary,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        // Market Description Card
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1F1F24)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Text(
+                    text = "MINER MARKET",
+                    color = TextPrimary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Temukan miner yang sesuai dengan strategi mining kamu. Setiap miner memiliki harga dan pendapatan berbeda. Semakin tinggi tier, semakin besar potensi pendapatan NX.",
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                    lineHeight = 18.sp
+                )
+            }
+        }
+
+        // Free Miner
+        MinerCard(
+            minerId = "free_miner",
+            name = "FREE MINER",
+            description = "Miner gratis dengan kecepatan sangat rendah. Cocok sebagai pilihan ketika saldo NX habis.",
+            priceLabel = "GRATIS",
+            rewardLabel = "2 NX / 24 JAM",
+            extraInfo = "Reward tersedia:\nSETIAP 2 HARI",
+            accentColor = MinerFreeAccent,
+            buttonText = "AKTIFKAN",
+            onActionClick = onFreeMinerClick
+        )
+
+        // Basic Miner
+        MinerCard(
+            minerId = "basic_miner",
+            name = "BASIC MINER",
+            description = "Miner standar untuk memulai perjalanan mining NX.",
+            priceLabel = "25",
+            rewardLabel = "5 NX / 24 JAM",
+            accentColor = MinerBasicAccent,
+            buttonText = "BELI",
+            onActionClick = { onPurchaseClick("25", "basic_miner", "Basic Miner", "5") }
+        )
+
+        // Slow Miner
+        MinerCard(
+            minerId = "slow_miner",
+            name = "SLOW MINER",
+            description = "Miner lambat dengan performa lebih baik dari Basic Miner.",
+            priceLabel = "100",
+            rewardLabel = "25 NX / 24 JAM",
+            accentColor = MinerSlowAccent,
+            buttonText = "BELI",
+            onActionClick = { onPurchaseClick("100", "slow_miner", "Slow Miner", "25") }
+        )
+
+        // Fast Miner
+        MinerCard(
+            minerId = "fast_miner",
+            name = "FAST MINER",
+            description = "Miner cepat untuk meningkatkan produksi NX secara signifikan.",
+            priceLabel = "400",
+            rewardLabel = "120 NX / 24 JAM",
+            accentColor = MinerFastAccent,
+            buttonText = "BELI",
+            onActionClick = { onPurchaseClick("400", "fast_miner", "Fast Miner", "120") }
+        )
+
+        // Ultra Miner
+        MinerCard(
+            minerId = "ultra_miner",
+            name = "ULTRA MINER",
+            description = "Miner kelas tinggi dengan kemampuan produksi NX yang jauh lebih besar.",
+            priceLabel = "1500",
+            rewardLabel = "550 NX / 24 JAM",
+            accentColor = MinerUltraAccent,
+            buttonText = "BELI",
+            onActionClick = { onPurchaseClick("1500", "ultra_miner", "Ultra Miner", "550") }
+        )
+
+        // Void Miner
+        MinerCard(
+            minerId = "void_miner",
+            name = "VOID MINER",
+            description = "Miner kelas ekstrem yang menggunakan kekuatan Void untuk menghasilkan NX dalam jumlah besar.",
+            priceLabel = "4000",
+            rewardLabel = "2.000 NX / 24 JAM",
+            accentColor = MinerVoidAccent,
+            buttonText = "BELI",
+            isSpecial = true,
+            onActionClick = { onPurchaseClick("4000", "void_miner", "Void Miner", "2000") }
+        )
+        
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 

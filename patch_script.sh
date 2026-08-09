@@ -1,0 +1,1 @@
+sed -i 's/import androidx.compose.foundation.layout.*/import androidx.compose.foundation.layout.*\nimport androidx.compose.foundation.pager.HorizontalPager\nimport androidx.compose.foundation.pager.rememberPagerState/' app/src/main/java/com/example/MinerShopScreen.kt

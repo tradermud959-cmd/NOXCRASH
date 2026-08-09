@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
     MiningManager.init(this)
     HistoryManager.init(this)
     StatisticsManager.init(this)
+    AIManager.init(this)
     
     enableEdgeToEdge()
     

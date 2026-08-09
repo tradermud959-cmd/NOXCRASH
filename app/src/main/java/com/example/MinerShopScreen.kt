@@ -74,6 +74,9 @@ fun MinerShopScreen(navController: NavController) {
             val priceDec = BigDecimal(price)
             val success = ProfileManager.updateBalance(priceDec)
             if (success) {
+                HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 ${minerName.uppercase()}", "Miner dibeli", "-$price NX")
+                StatisticsManager.addPurchase()
+                
                 val rewardDec = BigDecimal(reward)
                 MiningManager.startMining(minerId, minerName, rewardDec, 24)
                 showNotification(

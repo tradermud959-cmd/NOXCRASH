@@ -107,10 +107,12 @@ fun NoxCrashApp() {
                     composable("profil") { ProfileScreen(onOpenDrawer = { scope.launch { drawerState.open() } }) }
                     composable("notifikasi") { NotificationScreen(navController) }
                     composable("statistik") { StatisticsScreen(navController) }
-                    composable("riwayat") { MinerHistoryScreen(navController) }
+                    composable("riwayat") { HistoryScreen(navController) }
                     composable("pengaturan") { SettingsScreen(navController) }
                     composable("musik") { MusicListScreen(navController) }
                     composable("shop") { MinerShopScreen(navController) }
+                    composable("info_app") { InfoAppScreen(navController) }
+                    composable("info_nx") { InfoNXScreen(navController) }
                 }
             }
         }

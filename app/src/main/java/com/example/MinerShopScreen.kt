@@ -206,7 +206,7 @@ fun MinerShopScreen(navController: NavController) {
 
                 // Free Miner
                 MinerCard(
-                    iconRes = R.drawable.ic_miner_free,
+                    minerId = "free_miner",
                     name = "FREE MINER",
                     description = "Miner gratis dengan kecepatan sangat rendah. Cocok sebagai pilihan ketika saldo NX habis.",
                     priceLabel = "GRATIS",
@@ -219,7 +219,7 @@ fun MinerShopScreen(navController: NavController) {
 
                 // Basic Miner
                 MinerCard(
-                    iconRes = R.drawable.ic_miner_basic,
+                    minerId = "basic_miner",
                     name = "BASIC MINER",
                     description = "Miner standar untuk memulai perjalanan mining NX.",
                     priceLabel = "25",
@@ -231,7 +231,7 @@ fun MinerShopScreen(navController: NavController) {
 
                 // Slow Miner
                 MinerCard(
-                    iconRes = R.drawable.ic_miner_slow,
+                    minerId = "slow_miner",
                     name = "SLOW MINER",
                     description = "Miner lambat dengan performa lebih baik dari Basic Miner.",
                     priceLabel = "100",
@@ -243,7 +243,7 @@ fun MinerShopScreen(navController: NavController) {
 
                 // Fast Miner
                 MinerCard(
-                    iconRes = R.drawable.ic_miner_fast,
+                    minerId = "fast_miner",
                     name = "FAST MINER",
                     description = "Miner cepat untuk meningkatkan produksi NX secara signifikan.",
                     priceLabel = "400",
@@ -255,7 +255,7 @@ fun MinerShopScreen(navController: NavController) {
 
                 // Ultra Miner
                 MinerCard(
-                    iconRes = R.drawable.ic_miner_ultra,
+                    minerId = "ultra_miner",
                     name = "ULTRA MINER",
                     description = "Miner kelas tinggi dengan kemampuan produksi NX yang jauh lebih besar.",
                     priceLabel = "1500",
@@ -267,7 +267,7 @@ fun MinerShopScreen(navController: NavController) {
 
                 // Void Miner
                 MinerCard(
-                    iconRes = R.drawable.ic_miner_void,
+                    minerId = "void_miner",
                     name = "VOID MINER",
                     description = "Miner kelas ekstrem yang menggunakan kekuatan Void untuk menghasilkan NX dalam jumlah besar.",
                     priceLabel = "4000",
@@ -333,7 +333,7 @@ fun MinerShopScreen(navController: NavController) {
 
 @Composable
 fun MinerCard(
-    iconRes: Int,
+    minerId: String,
     name: String,
     description: String,
     priceLabel: String,
@@ -367,10 +367,9 @@ fun MinerCard(
                         .border(1.dp, accentColor.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        painter = painterResource(id = iconRes),
+                    coil.compose.AsyncImage(
+                        model = getMinerIconPath(minerId),
                         contentDescription = name,
-                        tint = accentColor,
                         modifier = Modifier.size(24.dp)
                     )
                 }

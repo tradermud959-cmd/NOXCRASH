@@ -139,11 +139,19 @@ fun MiningCard() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "⛏️",
-                    fontSize = 18.sp,
-                    modifier = Modifier.graphicsLayer(rotationZ = pickaxeRotation.value)
-                )
+                if (miningStatus == MiningStatus.ACTIVE && activeMiner != null) {
+                    coil.compose.AsyncImage(
+                        model = getMinerIconPath(activeMiner!!.id),
+                        contentDescription = "Miner Icon",
+                        modifier = Modifier.size(24.dp).graphicsLayer(rotationZ = pickaxeRotation.value)
+                    )
+                } else {
+                    Text(
+                        text = "⛏️",
+                        fontSize = 18.sp,
+                        modifier = Modifier.graphicsLayer(rotationZ = pickaxeRotation.value)
+                    )
+                }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = if (miningStatus == MiningStatus.ACTIVE) activeMiner?.name?.uppercase() ?: "MINING ACTIVE" else "MINING OFF",
@@ -485,8 +493,14 @@ fun ActiveMinersCard() {
                 val isCompleted = miningStatus == MiningStatus.COMPLETED
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    coil.compose.AsyncImage(
+                        model = getMinerIconPath(miner.id),
+                        contentDescription = miner.name,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "⛏️ ${miner.name}",
+                        text = miner.name,
                         color = TextPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp

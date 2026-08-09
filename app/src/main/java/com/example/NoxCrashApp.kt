@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -113,6 +114,7 @@ fun NoxCrashApp() {
                     composable("shop") { MinerShopScreen(navController) }
                     composable("info_app") { InfoAppScreen(navController) }
                     composable("info_nx") { InfoNXScreen(navController) }
+                    composable("withdraw") { WithdrawScreen(onOpenDrawer = { scope.launch { drawerState.open() } }) }
                 }
             }
         }
@@ -148,17 +150,32 @@ fun DrawerContent(
         }
         Spacer(modifier = Modifier.height(32.dp))
 
-        DrawerItem("🏠 Home", "home", currentRoute, onNavigate)
-        DrawerItem("👤 Profil", "profil", currentRoute, onNavigate)
-        DrawerItem("🔔 Notifikasi", "notifikasi", currentRoute, onNavigate)
-        DrawerItem("📊 Statistik", "statistik", currentRoute, onNavigate)
-        DrawerItem("📜 Riwayat Miner", "riwayat", currentRoute, onNavigate)
-        DrawerItem("⚙️ Pengaturan", "pengaturan", currentRoute, onNavigate)
+        DrawerItem(icon = { Text("🏠", fontSize = 18.sp) }, title = "Home", route = "home", currentRoute = currentRoute, onNavigate = onNavigate)
+        DrawerItem(icon = { Text("👤", fontSize = 18.sp) }, title = "Profil", route = "profil", currentRoute = currentRoute, onNavigate = onNavigate)
+        DrawerItem(
+            icon = { 
+                Icon(
+                    imageVector = Icons.Default.AccountBalanceWallet, 
+                    contentDescription = "Withdraw", 
+                    tint = if ("withdraw" == currentRoute) ColorMining else TextPrimary,
+                    modifier = Modifier.size(20.dp)
+                ) 
+            }, 
+            title = "Withdraw", 
+            route = "withdraw", 
+            currentRoute = currentRoute, 
+            onNavigate = onNavigate
+        )
+        DrawerItem(icon = { Text("🔔", fontSize = 18.sp) }, title = "Notifikasi", route = "notifikasi", currentRoute = currentRoute, onNavigate = onNavigate)
+        DrawerItem(icon = { Text("📊", fontSize = 18.sp) }, title = "Statistik", route = "statistik", currentRoute = currentRoute, onNavigate = onNavigate)
+        DrawerItem(icon = { Text("📜", fontSize = 18.sp) }, title = "Riwayat Miner", route = "riwayat", currentRoute = currentRoute, onNavigate = onNavigate)
+        DrawerItem(icon = { Text("⚙️", fontSize = 18.sp) }, title = "Pengaturan", route = "pengaturan", currentRoute = currentRoute, onNavigate = onNavigate)
     }
 }
 
 @Composable
 fun DrawerItem(
+    icon: @Composable () -> Unit,
     title: String,
     route: String,
     currentRoute: String,
@@ -177,6 +194,8 @@ fun DrawerItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        icon()
+        Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = title,
             color = textColor,

@@ -68,3 +68,15 @@ fun EmptyState(icon: String, title: String, description: String) {
         )
     }
 }
+
+fun getMinerIconPath(minerId: String): String {
+    return "file:///android_asset/noxcrash/" + when (minerId) {
+        "free_miner" -> "miner_free.png"
+        "basic_miner" -> "miner_basic.png"
+        "slow_miner" -> "miner_slow.png"
+        "fast_miner" -> "miner_fast.png"
+        "ultra_miner" -> "miner_fast.png" // Fallback to fast
+        "void_miner" -> "miner_void.png"
+        else -> "miner_basic.png"
+    }
+}

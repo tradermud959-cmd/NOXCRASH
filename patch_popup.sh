@@ -1,0 +1,1 @@
+sed -i 's/import androidx.compose.runtime.\*/import androidx.compose.runtime.*\nimport androidx.lifecycle.compose.LocalLifecycleOwner\nimport androidx.lifecycle.repeatOnLifecycle\nimport androidx.lifecycle.Lifecycle/g' app/src/main/java/com/example/NotificationPopup.kt

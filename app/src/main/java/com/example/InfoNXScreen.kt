@@ -56,7 +56,7 @@ fun InfoNXScreen(navController: NavController) {
                     Text("🪙 SALDO KAMU", color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "${profileData.balance} NX",
+                        text = "${profileData.balance}",
                         color = Color(0xFF06B6D4),
                         fontWeight = FontWeight.Bold,
                         fontSize = 28.sp

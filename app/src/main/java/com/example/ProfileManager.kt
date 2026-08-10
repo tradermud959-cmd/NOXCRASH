@@ -13,7 +13,7 @@ data class ProfileData(
     val username: String = "@username",
     val photoUri: String? = null,
     val coverUri: String? = null,
-    val balance: String = "0.00000000 NX"
+    val balance: String = "0.000000000000000 NX"
 )
 
 object ProfileManager {
@@ -36,7 +36,7 @@ object ProfileManager {
             username = prefs?.getString("username", "@username") ?: "@username",
             photoUri = prefs?.getString("photoUri", null),
             coverUri = prefs?.getString("coverUri", null),
-            balance = prefs?.getString("balance", "0.00000000 NX") ?: "0.00000000 NX"
+            balance = prefs?.getString("balance", "0.000000000000000 NX") ?: "0.000000000000000 NX"
         )
     }
     
@@ -55,7 +55,7 @@ object ProfileManager {
         return try {
             val currentDec = java.math.BigDecimal(currentStr)
             val newBalance = currentDec.add(amountToAdd)
-            val newBalanceStr = String.format(java.util.Locale.US, "%.8f NX", newBalance)
+            val newBalanceStr = newBalance.toNXFormat()
             saveProfile(_profileData.value.copy(balance = newBalanceStr))
             true
         } catch (e: Exception) {
@@ -64,13 +64,16 @@ object ProfileManager {
         }
     }
     
+    fun reload() {
+        _profileData.value = loadProfile()
+    }
     fun updateBalance(amountToSubtract: java.math.BigDecimal): Boolean {
         val currentStr = _profileData.value.balance.replace(" NX", "")
         return try {
             val currentDec = java.math.BigDecimal(currentStr)
             if (currentDec >= amountToSubtract) {
                 val newBalance = currentDec.subtract(amountToSubtract)
-                val newBalanceStr = String.format(java.util.Locale.US, "%.8f NX", newBalance)
+                val newBalanceStr = newBalance.toNXFormat()
                 saveProfile(_profileData.value.copy(balance = newBalanceStr))
                 true
             } else {

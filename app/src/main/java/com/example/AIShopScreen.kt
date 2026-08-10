@@ -31,7 +31,7 @@ fun AIShopPage(showNotification: (NotificationType, String, String) -> Unit) {
     val aiState by AIManager.aiState.collectAsState()
     val miningStatus by MiningManager.miningStatus.collectAsState()
     
-    val onPurchaseClick = { aiType: AIType, name: String, durationDays: Long, price: String ->
+    val onPurchaseClick = { config: AIConfig ->
         if (miningStatus != MiningStatus.OFF) {
             showNotification(
                 NotificationType.WARNING,
@@ -45,14 +45,13 @@ fun AIShopPage(showNotification: (NotificationType, String, String) -> Unit) {
                 "Nonaktifkan AI Mode terlebih dahulu sebelum membeli AI baru."
             )
         } else {
-            val priceDec = BigDecimal(price)
-            if (AIManager.purchaseAI(aiType, name, durationDays, priceDec)) {
-                HistoryManager.addHistory(HistoryType.PURCHASE, "🤖 ${name.uppercase()}", "AI Mode dibeli", "-$price NX")
+            if (AIManager.purchaseAI(config.type, config.name, config.durationDays, config.price)) {
+                HistoryManager.addHistory(HistoryType.PURCHASE, "🤖 ${config.name.uppercase()}", "AI Mode dibeli", "-${config.price.toNXFormat()}")
                 StatisticsManager.addPurchase()
                 showNotification(
                     NotificationType.SUCCESS,
                     "🤖 AI DIAKTIFKAN",
-                    "$name berhasil dibeli dan mulai beroperasi."
+                    "${config.name} berhasil dibeli dan mulai beroperasi."
                 )
             } else {
                 showNotification(
@@ -121,10 +120,10 @@ fun AIShopPage(showNotification: (NotificationType, String, String) -> Unit) {
             tier = "BASIC AI",
             description = "AI dasar untuk memantau aktivitas mining dan memberikan rekomendasi sederhana.",
             capabilities = listOf("Monitoring miner", "Monitoring saldo NX", "Estimasi pendapatan", "Rekomendasi mining", "Peringatan status mining"),
-            durationLabel = "3 HARI",
-            priceLabel = "75",
+            durationLabel = "${AIEconomy.scout.durationDays} HARI",
+            priceLabel = AIEconomy.scout.priceString,
             accentColor = Color(0xFF00E5FF),
-            onActionClick = { onPurchaseClick(AIType.SCOUT, "AI Scout", 3, "75") }
+            onActionClick = { onPurchaseClick(AIEconomy.scout) }
         )
 
         // AI Smart
@@ -134,10 +133,10 @@ fun AIShopPage(showNotification: (NotificationType, String, String) -> Unit) {
             tier = "INTERMEDIATE AI",
             description = "AI pintar yang menganalisis saldo, performa miner, dan memberikan strategi mining yang lebih optimal.",
             capabilities = listOf("Analisis saldo wallet", "Rekomendasi upgrade", "Strategi mining", "+ Semua fitur AI Scout"),
-            durationLabel = "7 HARI",
-            priceLabel = "125",
+            durationLabel = "${AIEconomy.smart.durationDays} HARI",
+            priceLabel = AIEconomy.smart.priceString,
             accentColor = Color(0xFFE040FB),
-            onActionClick = { onPurchaseClick(AIType.SMART, "AI Smart", 7, "125") }
+            onActionClick = { onPurchaseClick(AIEconomy.smart) }
         )
 
         // AI Pro
@@ -147,10 +146,10 @@ fun AIShopPage(showNotification: (NotificationType, String, String) -> Unit) {
             tier = "ADVANCED AI",
             description = "AI tingkat lanjut untuk mengoptimalkan strategi mining dan mengelola rekomendasi miner secara lebih cerdas.",
             capabilities = listOf("Monitoring otomatis", "Evaluasi miner", "Optimasi strategi", "+ Semua fitur AI Smart"),
-            durationLabel = "14 HARI",
-            priceLabel = "200",
+            durationLabel = "${AIEconomy.pro.durationDays} HARI",
+            priceLabel = AIEconomy.pro.priceString,
             accentColor = Color(0xFFFF9800),
-            onActionClick = { onPurchaseClick(AIType.PRO, "AI Pro", 14, "200") }
+            onActionClick = { onPurchaseClick(AIEconomy.pro) }
         )
 
         // AI Void
@@ -160,10 +159,10 @@ fun AIShopPage(showNotification: (NotificationType, String, String) -> Unit) {
             tier = "ULTIMATE AI",
             description = "AI otomatisasi tertinggi NoxCrash untuk mengelola siklus mining secara otomatis tanpa intervensi.",
             capabilities = listOf("AUTO CLAIM", "AUTO PURCHASE", "AUTO MANAGEMENT", "+ Semua fitur AI Pro"),
-            durationLabel = "30 HARI",
-            priceLabel = "300",
+            durationLabel = "${AIEconomy.void.durationDays} HARI",
+            priceLabel = AIEconomy.void.priceString,
             accentColor = Color(0xFF8E24AA),
-            onActionClick = { onPurchaseClick(AIType.VOID, "AI Void", 30, "300") },
+            onActionClick = { onPurchaseClick(AIEconomy.void) },
             isSpecial = true
         )
         
@@ -270,7 +269,7 @@ fun AICard(
                     Text(text = "HARGA", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "$priceLabel NX",
+                        text = java.math.BigDecimal(priceLabel).toNXFormat(),
                         color = TextPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold

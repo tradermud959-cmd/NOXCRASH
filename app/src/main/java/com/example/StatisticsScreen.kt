@@ -48,9 +48,9 @@ fun StatisticsScreen(navController: NavController) {
             Text("STATISTIK NOXCRASH", color = TextSecondary, fontSize = 14.sp, letterSpacing = 1.sp)
             Spacer(modifier = Modifier.height(16.dp))
             
-            StatCard(title = "💰 TOTAL WALLET", value = "${totalWallet.balance} NX", description = "Saldo saat ini")
+            StatCard(title = "💰 TOTAL WALLET", value = "${totalWallet.balance}", description = "Saldo saat ini")
             StatCard(title = "⛏️ TOTAL MINING", value = "$totalSessions", description = "Jumlah session mining")
-            StatCard(title = "💎 TOTAL REWARD", value = "${totalReward.toPlainString()} NX", description = "Total NX yang pernah di-claim")
+            StatCard(title = "💎 TOTAL REWARD", value = "${totalReward.toNXFormat()}", description = "Total NX yang pernah di-claim")
             StatCard(title = "🛒 TOTAL PEMBELIAN MINER", value = "$totalPurchases", description = "Jumlah miner yang pernah dibeli")
             StatCard(title = "⏱️ WAKTU MINING", value = "$totalMiningTime JAM", description = "Total waktu mining")
             

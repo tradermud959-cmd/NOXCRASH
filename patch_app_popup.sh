@@ -1,0 +1,1 @@
+sed -i '/NavHost(navController = navController, startDestination = "home") {/i \                NotificationPopupOverlay(onNavigateToNotification = { navController.navigate("notifikasi") })\n' app/src/main/java/com/example/NoxCrashApp.kt

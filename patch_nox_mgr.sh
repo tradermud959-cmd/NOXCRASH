@@ -1,0 +1,2 @@
+sed -i 's/private lateinit var prefs: SharedPreferences/private lateinit var prefs: SharedPreferences\n    private lateinit var appContext: Context/g' app/src/main/java/com/example/NoxNotificationManager.kt
+sed -i 's/prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)/appContext = context.applicationContext\n        prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)/g' app/src/main/java/com/example/NoxNotificationManager.kt

@@ -1,0 +1,4 @@
+sed -i 's/val elapsedMs = (currentTime - miner.startedAt).coerceAtLeast(0)/val elapsedMs = (currentTime - miner.startedAt).coerceAtLeast(0).coerceAtMost(totalDurationMs)/g' app/src/main/java/com/example/HomeScreen.kt
+sed -i 's/val progress = (elapsedMs.toDouble() \/ totalDurationMs.toDouble()).coerceIn(0.0, 1.0)//g' app/src/main/java/com/example/HomeScreen.kt
+sed -i 's/val currentReward = miner.reward.toDouble() \* progress/val currentReward = miner.reward.multiply(java.math.BigDecimal(elapsedMs)).divide(java.math.BigDecimal(totalDurationMs), 15, java.math.RoundingMode.DOWN)/g' app/src/main/java/com/example/HomeScreen.kt
+sed -i 's/val currentRewardString = java.lang.String.format(java.util.Locale.US, "%.15f NX", currentReward)/val currentRewardString = currentReward.toNXFormat()/g' app/src/main/java/com/example/HomeScreen.kt

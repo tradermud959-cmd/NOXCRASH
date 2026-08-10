@@ -68,6 +68,11 @@ object MiningManager {
                 if (currentTime >= endsAt && status == MiningStatus.ACTIVE) {
                     _activeMiner.value = miner
                     setMiningStatus(MiningStatus.COMPLETED)
+                    NoxNotificationManager.addNotification(
+                        NoxNotificationType.MINER,
+                        "MINER SELESAI",
+                        "Proses mining telah mencapai waktunya. Cek detail aktivitasmu."
+                    )
                 } else {
                     _activeMiner.value = miner
                     _miningStatus.value = status
@@ -75,8 +80,8 @@ object MiningManager {
             } else {
                 setMiningStatus(MiningStatus.OFF)
             }
-        } else {
-             _miningStatus.value = MiningStatus.OFF
+        } else { 
+            _miningStatus.value = MiningStatus.OFF
         }
     }
 
@@ -89,7 +94,6 @@ object MiningManager {
         if (_miningStatus.value != MiningStatus.OFF) {
             return false // Already mining
         }
-
         val currentTime = System.currentTimeMillis()
         val endsAt = currentTime + (durationHours * 60 * 60 * 1000)
 
@@ -121,9 +125,9 @@ object MiningManager {
         setMiningStatus(MiningStatus.ACTIVE)
         
         if (id == "free_miner") {
-            HistoryManager.addHistory(HistoryType.MINING, "⛏️ FREE MINER", "Mining dimulai", "+${reward.toPlainString()} NX / ${durationHours} JAM")
+            HistoryManager.addHistory(HistoryType.MINING, "⛏️ FREE MINER", "Mining dimulai", "+${reward.toNXFormat()} / ${durationHours} JAM")
         } else {
-            HistoryManager.addHistory(HistoryType.MINING, "⛏️ ${name.uppercase()}", "Mining dimulai", "+${reward.toPlainString()} NX / ${durationHours} JAM")
+            HistoryManager.addHistory(HistoryType.MINING, "⛏️ ${name.uppercase()}", "Mining dimulai", "+${reward.toNXFormat()} / ${durationHours} JAM")
         }
         StatisticsManager.addSession(durationHours)
         
@@ -141,7 +145,7 @@ object MiningManager {
         // Try to add reward to profile balance
         val success = ProfileManager.addBalance(reward)
         if (success) {
-            HistoryManager.addHistory(HistoryType.CLAIM, "💰 REWARD CLAIM", "Reward mining diterima", "+${reward.toPlainString()} NX")
+            HistoryManager.addHistory(HistoryType.CLAIM, "💰 REWARD CLAIM", "Reward mining diterima", "+${reward.toNXFormat()}")
             StatisticsManager.addReward(reward)
             
             // Reset mining state
@@ -160,11 +164,19 @@ object MiningManager {
         return false
     }
     
+    fun reload() {
+        loadState()
+    }
     fun refreshState() {
         if (_miningStatus.value == MiningStatus.ACTIVE) {
             val endsAt = _activeMiner.value?.endsAt ?: 0
             if (System.currentTimeMillis() >= endsAt) {
                 setMiningStatus(MiningStatus.COMPLETED)
+                NoxNotificationManager.addNotification(
+                    NoxNotificationType.MINER,
+                    "MINER SELESAI",
+                    "Proses mining telah mencapai waktunya. Cek detail aktivitasmu."
+                )
             }
         }
     }

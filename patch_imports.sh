@@ -1,0 +1,1 @@
+sed -i 's/import androidx.compose.material3.\*/import androidx.compose.material3.*\nimport androidx.compose.material3.Badge\nimport androidx.compose.material3.BadgedBox\nimport androidx.compose.runtime.collectAsState\nimport androidx.compose.runtime.getValue/g' app/src/main/java/com/example/NoxCrashApp.kt

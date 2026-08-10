@@ -7,6 +7,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.math.BigDecimal
 
+data class AIConfig(val type: AIType, val name: String, val durationDays: Long, val price: java.math.BigDecimal, val priceString: String)
+
+object AIEconomy {
+    val scout = AIConfig(AIType.SCOUT, "AI Scout", 3, java.math.BigDecimal("12000"), "12.000")
+    val smart = AIConfig(AIType.SMART, "AI Smart", 7, java.math.BigDecimal("20000"), "20.000")
+    val pro = AIConfig(AIType.PRO, "AI Pro", 14, java.math.BigDecimal("32000"), "32.000")
+    val void = AIConfig(AIType.VOID, "AI Void", 30, java.math.BigDecimal("48000"), "48.000")
+    
+    fun getConfig(type: AIType): AIConfig = when(type) {
+        AIType.SCOUT -> scout
+        AIType.SMART -> smart
+        AIType.PRO -> pro
+        AIType.VOID -> void
+    }
+}
 enum class AIType {
     SCOUT, SMART, PRO, VOID
 }
@@ -78,6 +93,11 @@ object AIManager {
                     setAIState(AIState.NO_AI)
                     _activeAI.value = null
                     updateHistoryStatus(startedAt, "SELESAI")
+                NoxNotificationManager.addNotification(
+                    NoxNotificationType.AI_MODE,
+                    "AI MODE SELESAI",
+                    "AI Mode telah menyelesaikan proses otomatisasinya. Cek hasil aktivitasmu."
+                )
                 } else {
                     _activeAI.value = ai
                     _aiState.value = state
@@ -199,6 +219,10 @@ object AIManager {
         return true
     }
 
+    fun reload() {
+        loadState()
+        loadHistory()
+    }
     fun refreshState() {
         if (_aiState.value != AIState.NO_AI) {
             val expiresAt = _activeAI.value?.expiresAt ?: 0
@@ -215,6 +239,11 @@ object AIManager {
                     remove("ai_expires_at")
                 }?.apply()
                 updateHistoryStatus(startedAt, "SELESAI")
+                NoxNotificationManager.addNotification(
+                    NoxNotificationType.AI_MODE,
+                    "AI MODE SELESAI",
+                    "AI Mode telah menyelesaikan proses otomatisasinya. Cek hasil aktivitasmu."
+                )
             } else {
                 // If AI Void is active, manage mining
                 if (_aiState.value == AIState.AI_VOID_ACTIVE) {
@@ -255,7 +284,7 @@ object AIManager {
             if (currentBalance >= price) {
                 if (ProfileManager.updateBalance(price)) {
                     StatisticsManager.addPurchase()
-                    HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 $name", "Pembelian otomatis (AI VOID)", "-${price.toPlainString()} NX")
+                    HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 $name", "Pembelian otomatis (AI VOID)", "-${price.toNXFormat()}")
                     MiningManager.startMining(id, name, reward, 24)
                     break
                 }

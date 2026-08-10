@@ -191,7 +191,7 @@ fun MinerMarketPage(showNotification: (NotificationType, String, String) -> Unit
             val priceDec = BigDecimal(price)
             val success = ProfileManager.updateBalance(priceDec)
             if (success) {
-                HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 ${minerName.uppercase()}", "Miner dibeli", "-$price NX")
+                HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 ${minerName.uppercase()}", "Miner dibeli", "-${java.math.BigDecimal(price).toNXFormat()}")
                 StatisticsManager.addPurchase()
                 
                 val rewardDec = BigDecimal(reward)
@@ -471,7 +471,7 @@ fun MinerCard(
                     Text(text = "HARGA", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = if (priceLabel == "GRATIS") priceLabel else "$priceLabel NX",
+                        text = if (priceLabel == "GRATIS") priceLabel else java.math.BigDecimal(priceLabel).toNXFormat(),
                         color = TextPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold

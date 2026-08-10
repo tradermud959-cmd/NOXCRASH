@@ -1,0 +1,1 @@
+sed -i 's/composable("info_nx") { InfoNXScreen(navController) }/composable("info_nx") { InfoNXScreen(navController) }\n                    composable("info_penting") { InfoPentingScreen(navController) }/g' app/src/main/java/com/example/NoxCrashApp.kt

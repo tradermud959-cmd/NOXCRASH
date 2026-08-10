@@ -11,8 +11,8 @@ import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
 enum class HistoryType {
-    MINING, CLAIM, PURCHASE, WARNING
-}
+    MINING, CLAIM, PURCHASE, WARNING }
+
 
 data class HistoryItem(
     val id: String,
@@ -74,4 +74,7 @@ object HistoryManager {
         _historyList.value = currentList
         saveHistory()
     }
+
+
+    fun reload() { loadHistory() }
 }

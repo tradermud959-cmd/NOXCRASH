@@ -61,4 +61,7 @@ object StatisticsManager {
         _totalPurchases.value += 1
         prefs.edit().putInt(KEY_TOTAL_PURCHASES, _totalPurchases.value).apply()
     }
+
+
+    fun reload() { loadStats() }
 }

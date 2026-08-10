@@ -16,6 +16,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.*
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,8 +93,15 @@ fun NoxCrashApp() {
                             }
                         },
                         actions = {
+                            val hasUnread by NoxNotificationManager.notificationsList.collectAsState()
                             IconButton(onClick = { navController.navigate("notifikasi") }) {
-                                Icon(Icons.Default.Notifications, contentDescription = "Notifikasi", tint = ColorNotification)
+                                if (hasUnread.isNotEmpty()) {
+                                    BadgedBox(badge = { Badge { Text(hasUnread.size.toString()) } }) {
+                                        Icon(Icons.Default.Notifications, contentDescription = "Notifikasi", tint = ColorNotification)
+                                    }
+                                } else {
+                                    Icon(Icons.Default.Notifications, contentDescription = "Notifikasi", tint = ColorNotification)
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
@@ -103,6 +114,8 @@ fun NoxCrashApp() {
             modifier = Modifier.blur(blurRadius)
         ) { paddingValues ->
             Box(modifier = Modifier.padding(paddingValues)) {
+                NotificationPopupOverlay(onNavigateToNotification = { navController.navigate("notifikasi") })
+
                 NavHost(navController = navController, startDestination = "home") {
                     composable("home") { HomeScreen(navController) }
                     composable("profil") { ProfileScreen(onOpenDrawer = { scope.launch { drawerState.open() } }) }
@@ -115,6 +128,10 @@ fun NoxCrashApp() {
                     composable("shop") { MinerShopScreen(navController) }
                     composable("info_app") { InfoAppScreen(navController) }
                     composable("info_nx") { InfoNXScreen(navController) }
+                    composable("info_penting") { InfoPentingScreen(navController) }
+                    composable("backup") { BackupScreen(navController) }
+                    composable("restore") { RestoreScreen(navController) }
+                    composable("reset") { ResetScreen(navController) }
                     composable("withdraw") { WithdrawScreen(onOpenDrawer = { scope.launch { drawerState.open() } }) }
                 }
             }

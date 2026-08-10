@@ -1,0 +1,3 @@
+sed -i 's/SettingsItem(title = "💾 Backup", description = "Simpan data saat ini") { \/\* Todo \*\/ }/SettingsItem(title = "💾 Backup", description = "Simpan data saat ini") { navController.navigate("backup") }/g' app/src/main/java/com/example/SettingsScreen.kt
+sed -i 's/SettingsItem(title = "♻️ Restore", description = "Kembalikan data") { \/\* Todo \*\/ }/SettingsItem(title = "♻️ Restore", description = "Kembalikan data") { navController.navigate("restore") }/g' app/src/main/java/com/example/SettingsScreen.kt
+sed -i 's/SettingsItem(title = "🗑️ Reset", description = "Hapus semua data") { \/\* Todo \*\/ }/SettingsItem(title = "🗑️ Reset", description = "Hapus semua data") { navController.navigate("reset") }/g' app/src/main/java/com/example/SettingsScreen.kt

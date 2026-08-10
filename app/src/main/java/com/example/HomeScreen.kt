@@ -99,9 +99,9 @@ fun MiningCard() {
     LaunchedEffect(miningStatus) {
         if (miningStatus == MiningStatus.ACTIVE) {
             while (true) {
-                delay(1000)
+                delay(50)
                 currentTime = System.currentTimeMillis()
-                MiningManager.refreshState()
+                if (currentTime % 1000 < 50) MiningManager.refreshState()
             }
         }
     }
@@ -155,23 +155,36 @@ fun MiningCard() {
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 val miner = activeMiner!!
+                val totalDurationMs = miner.durationHours * 60 * 60 * 1000
+                val elapsedMs = (currentTime - miner.startedAt).coerceAtLeast(0).coerceAtMost(totalDurationMs)
+                
+                val currentReward = miner.reward.multiply(java.math.BigDecimal(elapsedMs)).divide(java.math.BigDecimal(totalDurationMs), 15, java.math.RoundingMode.DOWN)
+                val currentRewardString = currentReward.toNXFormat()
+                
+                Text(
+                    text = currentRewardString,
+                    maxLines = 1,
+                    softWrap = false,
+                    color = TextPrimary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
                 val remainingMs = (miner.endsAt - currentTime).coerceAtLeast(0)
                 val remainingSeconds = remainingMs / 1000
                 val hours = remainingSeconds / 3600
                 val minutes = (remainingSeconds % 3600) / 60
                 val seconds = remainingSeconds % 60
-                val timeString = String.format("%02d:%02d:%02d", hours, minutes, seconds)
-                
+                val timeString = java.lang.String.format("%02d:%02d:%02d", hours, minutes, seconds)
                 Text(
-                    text = timeString,
-                    color = TextPrimary,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold
+                    text = "Sisa Waktu: $timeString",
+                    color = TextSecondary,
+                    fontSize = 14.sp
                 )
                 
-                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Estimasi Pendapatan: ${miner.reward.toPlainString()} NX",
+                    text = "Estimasi Pendapatan: ${miner.reward.toNXFormat()}",
                     color = TextSecondary,
                     fontSize = 12.sp
                 )
@@ -345,7 +358,7 @@ fun ProfileCard() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
+                    .aspectRatio(16f/9f)
             ) {
                 coil.compose.AsyncImage(
                     model = profileData.coverUri,
@@ -368,7 +381,7 @@ fun ProfileCard() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
-                    .offset(y = (-24).dp),
+                    .offset(y = (-32).dp),
                 verticalAlignment = Alignment.Bottom
             ) {
                 Box(
@@ -391,7 +404,7 @@ fun ProfileCard() {
                 
                 Spacer(modifier = Modifier.width(16.dp))
                 
-                Column(modifier = Modifier.padding(bottom = 4.dp)) {
+                Column(modifier = Modifier.padding(bottom = 8.dp)) {
                     Text(
                         text = profileData.username,
                         color = TextPrimary,
@@ -407,12 +420,12 @@ fun ProfileCard() {
                 }
             }
             
-            Spacer(modifier = Modifier.height(4.dp))
-            
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 16.dp)
+                    .offset(y = (-16).dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -427,6 +440,8 @@ fun ProfileCard() {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = profileData.balance,
+                        maxLines = 1,
+                        softWrap = false,
                         color = TextPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
@@ -446,7 +461,6 @@ fun ProfileCard() {
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
@@ -523,7 +537,7 @@ fun MusicPlayerCard(navController: NavController) {
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, Color(0x33D500F9), RoundedCornerShape(24.dp))
-            .clickable { navController.navigate("music") }
+            .clickable { navController.navigate("musik") }
     ) {
         Column(
             modifier = Modifier
@@ -694,7 +708,7 @@ fun ActiveMinersCard() {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Reward: ${miner.reward.toPlainString()} NX / ${miner.durationHours} JAM",
+                    text = "Reward: ${miner.reward.toNXFormat()} / ${miner.durationHours} JAM",
                     color = TextSecondary,
                     fontSize = 14.sp
                 )
@@ -717,7 +731,7 @@ fun ActiveMinersCard() {
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("CLAIM ${miner.reward.toPlainString()} NX", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Text("CLAIM ${miner.reward.toNXFormat()}", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
                 } else {
                     val totalDurationMs = miner.durationHours * 60 * 60 * 1000

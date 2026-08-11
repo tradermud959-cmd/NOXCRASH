@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
     ProfileManager.init(this)
     MusicPlayerManager.init(this)
     MiningManager.init(this)
+    SupplyManager.init(this)
     HistoryManager.init(this)
     StatisticsManager.init(this)
     AIManager.init(this)

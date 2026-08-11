@@ -42,6 +42,9 @@ fun HomeScreen(navController: NavController) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
+            SupplyCard()
+        }
+        item {
             MiningCard()
         }
         item {
@@ -155,10 +158,7 @@ fun MiningCard() {
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 val miner = activeMiner!!
-                val totalDurationMs = miner.durationHours * 60 * 60 * 1000
-                val elapsedMs = (currentTime - miner.startedAt).coerceAtLeast(0).coerceAtMost(totalDurationMs)
-                
-                val currentReward = miner.reward.multiply(java.math.BigDecimal(elapsedMs)).divide(java.math.BigDecimal(totalDurationMs), 15, java.math.RoundingMode.DOWN)
+                val currentReward = miner.calculateCurrentReward(currentTime)
                 val currentRewardString = currentReward.toNXFormat()
                 
                 Text(
@@ -170,21 +170,51 @@ fun MiningCard() {
                     fontWeight = FontWeight.Bold
                 )
                 
-                Spacer(modifier = Modifier.height(8.dp))
-                val remainingMs = (miner.endsAt - currentTime).coerceAtLeast(0)
-                val remainingSeconds = remainingMs / 1000
-                val hours = remainingSeconds / 3600
-                val minutes = (remainingSeconds % 3600) / 60
-                val seconds = remainingSeconds % 60
-                val timeString = java.lang.String.format("%02d:%02d:%02d", hours, minutes, seconds)
+                Spacer(modifier = Modifier.height(16.dp))
+                val elapsedMs = (currentTime - miner.startedAt).coerceAtLeast(0)
+                val elapsedSeconds = elapsedMs / 1000
+                val days = elapsedSeconds / (24 * 3600)
+                val hours = (elapsedSeconds % (24 * 3600)) / 3600
+                val minutes = (elapsedSeconds % 3600) / 60
+                val seconds = elapsedSeconds % 60
+                val timeString = if (days > 0) {
+                    "$days hari $hours jam $minutes menit $seconds detik"
+                } else {
+                    "$hours jam $minutes menit $seconds detik"
+                }
+                
                 Text(
-                    text = "Sisa Waktu: $timeString",
+                    text = "TOTAL AKTIF",
+                    color = TextSecondary.copy(alpha = 0.7f),
+                    fontSize = 10.sp,
+                    letterSpacing = 1.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = timeString,
                     color = TextSecondary,
                     fontSize = 14.sp
                 )
                 
+                Spacer(modifier = Modifier.height(8.dp))
+                
                 Text(
-                    text = "Estimasi Pendapatan: ${miner.reward.toShortNXFormat()}",
+                    text = "HASHRATE",
+                    color = TextSecondary.copy(alpha = 0.7f),
+                    fontSize = 10.sp,
+                    letterSpacing = 1.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = NoxEconomyConfig.getHashrateString(miner.hashrate),
+                    color = ColorMining,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "ESTIMASI REWARD: ${miner.targetReward.toShortNXFormat()}",
                     color = TextSecondary,
                     fontSize = 12.sp
                 )
@@ -682,89 +712,139 @@ fun ActiveMinersCard() {
                 }
             } else {
                 val miner = activeMiner!!
-                val isCompleted = miningStatus == MiningStatus.COMPLETED
-                
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    coil.compose.AsyncImage(
-                        model = getMinerIconPath(miner.id),
-                        contentDescription = miner.name,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = miner.name,
-                        color = TextPrimary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Text(
-                    text = if (isCompleted) "Status: MINING SELESAI" else "Status: MINING",
-                    color = if (isCompleted) Color(0xFF64DD17) else ColorMining,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Reward: ${miner.reward.toShortNXFormat()} / ${miner.durationHours} JAM",
-                    color = TextSecondary,
-                    fontSize = 14.sp
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                if (isCompleted) {
-                    Button(
-                        onClick = {
-                            if (!isClaiming) {
-                                isClaiming = true
-                                MiningManager.claimReward()
-                                coroutineScope.launch {
-                                    delay(500)
-                                    isClaiming = false
-                                }
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF64DD17)),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("CLAIM ${miner.reward.toShortNXFormat()}", color = Color.Black, fontWeight = FontWeight.Bold)
-                    }
-                } else {
-                    val totalDurationMs = miner.durationHours * 60 * 60 * 1000
-                    val elapsedMs = currentTime - miner.startedAt
-                    val remainingMs = miner.endsAt - currentTime
-                    val progress = (elapsedMs.toFloat() / totalDurationMs.toFloat()).coerceIn(0f, 1f)
-                    
-                    val remainingSeconds = (remainingMs / 1000).coerceAtLeast(0)
-                    val hours = remainingSeconds / 3600
-                    val minutes = (remainingSeconds % 3600) / 60
-                    val seconds = remainingSeconds % 60
-                    val timeString = String.format("%02d:%02d:%02d", hours, minutes, seconds)
-                    
-                    Text("Progress: ${(progress * 100).toInt()}%", color = TextSecondary, fontSize = 14.sp)
-                    Text("Sisa: $timeString", color = TextSecondary, fontSize = 14.sp)
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .background(DarkSurfaceVariant, RoundedCornerShape(4.dp))
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(progress)
-                                .height(8.dp)
-                                .background(ColorMining, RoundedCornerShape(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = miner.name.uppercase(),
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "HASHRATE: ${NoxEconomyConfig.getHashrateString(miner.hashrate)}",
+                            color = ColorMining,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
+                    if (miningStatus == MiningStatus.COMPLETED) {
+                        Button(
+                            onClick = {
+                                if (isClaiming) return@Button
+                                isClaiming = true
+                                coroutineScope.launch {
+                                    MiningManager.claimReward()
+                                    isClaiming = false
+                                }
+                            },
+                            enabled = !isClaiming,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF64DD17)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                "CLAIM",
+                                color = Color.Black,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .background(ColorMining.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text("AKTIF", color = ColorMining, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                val currentReward = miner.calculateCurrentReward(currentTime)
+                Text(
+                    text = "Reward: ${currentReward.toNXFormat()} / ${miner.targetReward.toShortNXFormat()}",
+                    color = TextSecondary,
+                    fontSize = 12.sp
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                val elapsedMs = (currentTime - miner.startedAt).coerceAtLeast(0)
+                val elapsedSeconds = elapsedMs / 1000
+                val days = elapsedSeconds / (24 * 3600)
+                val hours = (elapsedSeconds % (24 * 3600)) / 3600
+                val minutes = (elapsedSeconds % 3600) / 60
+                val seconds = elapsedSeconds % 60
+                val timeString = if (days > 0) {
+                    "$days hari $hours jam $minutes menit $seconds detik"
+                } else {
+                    "$hours jam $minutes menit $seconds detik"
+                }
+                
+                Text(
+                    text = "Total Aktif: $timeString",
+                    color = TextSecondary,
+                    fontSize = 12.sp
+                )
             }
+        }
+    }
+}
+
+@Composable
+fun SupplyCard() {
+    val currentSupply by SupplyManager.currentSupply.collectAsState()
+
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, ColorMining.copy(alpha = 0.3f), RoundedCornerShape(24.dp))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "NX SUPPLY",
+                color = ColorMining,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 14.sp,
+                letterSpacing = 2.sp
+            )
             Spacer(modifier = Modifier.height(16.dp))
+            
+            Text(
+                text = "SISA SUPPLY",
+                color = TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            val formattedSupply = java.text.DecimalFormat("#,###.########", java.text.DecimalFormatSymbols(java.util.Locale("id", "ID"))).format(currentSupply)
+            Text(
+                text = "$formattedSupply NX",
+                color = TextPrimary,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 1.sp
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Supply tersedia untuk ditambang",
+                color = TextSecondary.copy(alpha = 0.7f),
+                fontSize = 11.sp
+            )
         }
     }
 }

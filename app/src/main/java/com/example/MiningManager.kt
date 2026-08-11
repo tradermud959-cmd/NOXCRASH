@@ -14,21 +14,28 @@ enum class MiningStatus {
 data class ActiveMiner(
     val id: String,
     val name: String,
-    val reward: BigDecimal,
-    val durationHours: Long,
-    val startedAt: Long,
-    val endsAt: Long
-)
+    val targetReward: BigDecimal,
+    val hashrate: BigDecimal,
+    val startedAt: Long
+) {
+    fun calculateCurrentReward(currentTime: Long): BigDecimal {
+        val elapsedMs = (currentTime - startedAt).coerceAtLeast(0)
+        val elapsedSec = BigDecimal(elapsedMs).divide(BigDecimal("1000"), 15, java.math.RoundingMode.DOWN)
+        val ratePerSec = NoxEconomyConfig.getRewardRatePerSecond(hashrate)
+        val generated = ratePerSec.multiply(elapsedSec)
+        return generated.min(targetReward)
+    }
+}
 
 object MiningManager {
     private var prefs: SharedPreferences? = null
-
+    
     private val _miningStatus = MutableStateFlow(MiningStatus.OFF)
     val miningStatus: StateFlow<MiningStatus> = _miningStatus.asStateFlow()
-
+    
     private val _activeMiner = MutableStateFlow<ActiveMiner?>(null)
     val activeMiner: StateFlow<ActiveMiner?> = _activeMiner.asStateFlow()
-
+    
     private val _lastFreeMinerUsedAt = MutableStateFlow<Long>(0)
     val lastFreeMinerUsedAt: StateFlow<Long> = _lastFreeMinerUsedAt.asStateFlow()
 
@@ -49,29 +56,30 @@ object MiningManager {
         if (status != MiningStatus.OFF) {
             val id = prefs.getString("miner_id", "") ?: ""
             val name = prefs.getString("miner_name", "") ?: ""
-            val rewardStr = prefs.getString("miner_reward", "0") ?: "0"
-            val duration = prefs.getLong("miner_duration", 0)
+            val targetRewardStr = prefs.getString("miner_target_reward", "0") ?: "0"
+            val hashrateStr = prefs.getString("miner_hashrate", "0") ?: "0"
             val startedAt = prefs.getLong("miner_started_at", 0)
-            val endsAt = prefs.getLong("miner_ends_at", 0)
 
             if (id.isNotEmpty()) {
                 val miner = ActiveMiner(
                     id = id,
                     name = name,
-                    reward = BigDecimal(rewardStr),
-                    durationHours = duration,
-                    startedAt = startedAt,
-                    endsAt = endsAt
+                    targetReward = BigDecimal(targetRewardStr),
+                    hashrate = BigDecimal(hashrateStr),
+                    startedAt = startedAt
                 )
                 
                 val currentTime = System.currentTimeMillis()
-                if (currentTime >= endsAt && status == MiningStatus.ACTIVE) {
+                val currentReward = miner.calculateCurrentReward(currentTime)
+                val isCompleted = currentReward >= miner.targetReward || SupplyManager.getSupply() <= BigDecimal.ZERO
+                
+                if (isCompleted && status == MiningStatus.ACTIVE) {
                     _activeMiner.value = miner
                     setMiningStatus(MiningStatus.COMPLETED)
                     NoxNotificationManager.addNotification(
                         NoxNotificationType.MINER,
                         "MINER SELESAI",
-                        "Proses mining telah mencapai waktunya. Cek detail aktivitasmu."
+                        "Proses mining oleh \${miner.name} telah selesai. Cek detail aktivitasmu."
                     )
                 } else {
                     _activeMiner.value = miner
@@ -80,8 +88,8 @@ object MiningManager {
             } else {
                 setMiningStatus(MiningStatus.OFF)
             }
-        } else { 
-            _miningStatus.value = MiningStatus.OFF
+        } else {
+             _miningStatus.value = MiningStatus.OFF
         }
     }
 
@@ -90,20 +98,21 @@ object MiningManager {
         prefs?.edit()?.putString("mining_status", status.name)?.apply()
     }
 
-    fun startMining(id: String, name: String, reward: BigDecimal, durationHours: Long): Boolean {
+    // Keep durationHours in signature to not break existing calls, but ignore it.
+    fun startMining(id: String, name: String, targetReward: BigDecimal, durationHours: Long = 0): Boolean {
         if (_miningStatus.value != MiningStatus.OFF) {
             return false // Already mining
         }
-        val currentTime = System.currentTimeMillis()
-        val endsAt = currentTime + (durationHours * 60 * 60 * 1000)
 
+        val currentTime = System.currentTimeMillis()
+        val hashrate = NoxEconomyConfig.getHashrateForMiner(id)
+        
         val miner = ActiveMiner(
             id = id,
             name = name,
-            reward = reward,
-            durationHours = durationHours,
-            startedAt = currentTime,
-            endsAt = endsAt
+            targetReward = targetReward,
+            hashrate = hashrate,
+            startedAt = currentTime
         )
 
         _activeMiner.value = miner
@@ -111,10 +120,9 @@ object MiningManager {
         prefs?.edit()?.apply {
             putString("miner_id", id)
             putString("miner_name", name)
-            putString("miner_reward", reward.toPlainString())
-            putLong("miner_duration", durationHours)
+            putString("miner_target_reward", targetReward.toPlainString())
+            putString("miner_hashrate", hashrate.toPlainString())
             putLong("miner_started_at", currentTime)
-            putLong("miner_ends_at", endsAt)
         }?.apply()
 
         if (id == "free_miner") {
@@ -124,12 +132,10 @@ object MiningManager {
 
         setMiningStatus(MiningStatus.ACTIVE)
         
-        if (id == "free_miner") {
-            HistoryManager.addHistory(HistoryType.MINING, "⛏️ FREE MINER", "Mining dimulai", "+${reward.toShortNXFormat()} / ${durationHours} JAM")
-        } else {
-            HistoryManager.addHistory(HistoryType.MINING, "⛏️ ${name.uppercase()}", "Mining dimulai", "+${reward.toShortNXFormat()} / ${durationHours} JAM")
-        }
-        StatisticsManager.addSession(durationHours)
+        HistoryManager.addHistory(HistoryType.MINING, "⛏️ \${name.uppercase()}", "Mining dimulai", "Target: \${targetReward.toShortNXFormat()}")
+        
+        // Add a generic session log since we don't have exact duration anymore
+        StatisticsManager.addSession(24) // Dummy duration for backward compatibility
         
         return true
     }
@@ -140,23 +146,33 @@ object MiningManager {
         }
 
         val miner = _activeMiner.value ?: return false
-        val reward = miner.reward
+        val currentTime = System.currentTimeMillis()
+        val calculatedReward = miner.calculateCurrentReward(currentTime)
+        
+        var rewardToClaim = calculatedReward
 
-        // Try to add reward to profile balance
-        val success = ProfileManager.addBalance(reward)
+        val currentSupply = SupplyManager.getSupply()
+        if (currentSupply <= BigDecimal.ZERO) {
+            rewardToClaim = BigDecimal.ZERO
+        } else if (rewardToClaim > currentSupply) {
+            rewardToClaim = currentSupply
+        }
+
+        val success = ProfileManager.addBalance(rewardToClaim)
         if (success) {
-            HistoryManager.addHistory(HistoryType.CLAIM, "💰 REWARD CLAIM", "Reward mining diterima", "+${reward.toShortNXFormat()}")
-            StatisticsManager.addReward(reward)
+            if (rewardToClaim > BigDecimal.ZERO) {
+                SupplyManager.deductSupply(rewardToClaim)
+            }
+            HistoryManager.addHistory(HistoryType.CLAIM, "💰 REWARD CLAIM", "Reward mining diterima", "+\${rewardToClaim.toShortNXFormat()}")
+            StatisticsManager.addReward(rewardToClaim)
             
-            // Reset mining state
             _activeMiner.value = null
             prefs?.edit()?.apply {
                 remove("miner_id")
                 remove("miner_name")
-                remove("miner_reward")
-                remove("miner_duration")
+                remove("miner_target_reward")
+                remove("miner_hashrate")
                 remove("miner_started_at")
-                remove("miner_ends_at")
             }?.apply()
             setMiningStatus(MiningStatus.OFF)
             return true
@@ -167,15 +183,18 @@ object MiningManager {
     fun reload() {
         loadState()
     }
+
     fun refreshState() {
         if (_miningStatus.value == MiningStatus.ACTIVE) {
-            val endsAt = _activeMiner.value?.endsAt ?: 0
-            if (System.currentTimeMillis() >= endsAt) {
+            val miner = _activeMiner.value ?: return
+            val currentReward = miner.calculateCurrentReward(System.currentTimeMillis())
+            val supply = SupplyManager.getSupply()
+            if (currentReward >= miner.targetReward || supply <= BigDecimal.ZERO) {
                 setMiningStatus(MiningStatus.COMPLETED)
                 NoxNotificationManager.addNotification(
                     NoxNotificationType.MINER,
                     "MINER SELESAI",
-                    "Proses mining telah mencapai waktunya. Cek detail aktivitasmu."
+                    "Proses mining oleh \${miner.name} telah selesai. Cek detail aktivitasmu."
                 )
             }
         }

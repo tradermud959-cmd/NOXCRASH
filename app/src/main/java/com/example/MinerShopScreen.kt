@@ -48,7 +48,6 @@ fun MinerShopScreen(navController: NavController) {
     var notificationId by remember { mutableStateOf(0) }
     
     val coroutineScope = rememberCoroutineScope()
-
     LaunchedEffect(Unit) {
         MiningManager.refreshState()
     }
@@ -65,8 +64,6 @@ fun MinerShopScreen(navController: NavController) {
         notificationId++
     }
 
-    // Page 0: Miner Market
-    // Page 1: AI Mode
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
 
     Scaffold(
@@ -116,7 +113,6 @@ fun MinerShopScreen(navController: NavController) {
                 }
             }
             
-            // Custom Notification Card Overlay
             AnimatedVisibility(
                 visible = currentNotification != null,
                 enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
@@ -171,10 +167,9 @@ fun MinerMarketPage(showNotification: (NotificationType, String, String) -> Unit
     val profileData by ProfileManager.profileData.collectAsState()
     val miningStatus by MiningManager.miningStatus.collectAsState()
     val aiState by AIManager.aiState.collectAsState()
-    val activeMiner by MiningManager.activeMiner.collectAsState()
     val lastFreeMinerUsedAt by MiningManager.lastFreeMinerUsedAt.collectAsState()
 
-    val onPurchaseClick = { price: String, minerId: String, minerName: String, reward: String ->
+    val onPurchaseClick = { price: String, minerId: String, minerName: String ->
         if (miningStatus != MiningStatus.OFF) {
             showNotification(
                 NotificationType.WARNING,
@@ -191,15 +186,16 @@ fun MinerMarketPage(showNotification: (NotificationType, String, String) -> Unit
             val priceDec = BigDecimal(price)
             val success = ProfileManager.updateBalance(priceDec)
             if (success) {
-                HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 ${minerName.uppercase()}", "Miner dibeli", "-${java.math.BigDecimal(price).toShortNXFormat()}")
+                val formattedPrice = java.text.DecimalFormat("#,###.########", java.text.DecimalFormatSymbols(java.util.Locale("id", "ID"))).format(priceDec)
+                HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 \${minerName.uppercase()}", "Miner dibeli", "-\${formattedPrice} NX")
                 StatisticsManager.addPurchase()
                 
-                val rewardDec = BigDecimal(reward)
+                val rewardDec = NoxEconomyConfig.getTargetRewardForMiner(minerId)
                 MiningManager.startMining(minerId, minerName, rewardDec, 24)
                 showNotification(
                     NotificationType.SUCCESS,
                     "⛏️ MINER AKTIF",
-                    "$minerName berhasil dibeli dan mulai mining."
+                    "\$minerName berhasil dibeli dan mulai mining."
                 )
             } else {
                 showNotification(
@@ -228,7 +224,7 @@ fun MinerMarketPage(showNotification: (NotificationType, String, String) -> Unit
             val currentTime = System.currentTimeMillis()
             val cooldownMs = 2L * 24 * 60 * 60 * 1000 // 2 days
             if (currentTime - lastFreeMinerUsedAt >= cooldownMs) {
-                MiningManager.startMining("free_miner", "Free Miner", BigDecimal("2"), 24)
+                MiningManager.startMining("free_miner", "Free Miner", NoxEconomyConfig.getTargetRewardForMiner("free_miner"), 24)
                 showNotification(
                     NotificationType.SUCCESS,
                     "⛏️ MINING DIMULAI",
@@ -251,7 +247,6 @@ fun MinerMarketPage(showNotification: (NotificationType, String, String) -> Unit
             .padding(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Wallet Balance Card
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = ProfileCardBg),
@@ -293,7 +288,6 @@ fun MinerMarketPage(showNotification: (NotificationType, String, String) -> Unit
             }
         }
 
-        // Market Description Card
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF1F1F24)),
@@ -320,78 +314,65 @@ fun MinerMarketPage(showNotification: (NotificationType, String, String) -> Unit
             }
         }
 
-        // Free Miner
         MinerCard(
             minerId = "free_miner",
             name = "FREE MINER",
             description = "Miner gratis dengan kecepatan sangat rendah. Cocok sebagai pilihan ketika saldo NX habis.",
             priceLabel = "GRATIS",
-            rewardLabel = "2 NX / 24 JAM",
-            extraInfo = "Reward tersedia:\nSETIAP 2 HARI",
             accentColor = MinerFreeAccent,
             buttonText = "AKTIFKAN",
             onActionClick = onFreeMinerClick
         )
 
-        // Basic Miner
         MinerCard(
             minerId = "basic_miner",
             name = "BASIC MINER",
             description = "Miner standar untuk memulai perjalanan mining NX.",
             priceLabel = "25",
-            rewardLabel = "5 NX / 24 JAM",
             accentColor = MinerBasicAccent,
             buttonText = "BELI",
-            onActionClick = { onPurchaseClick("25", "basic_miner", "Basic Miner", "5") }
+            onActionClick = { onPurchaseClick("25", "basic_miner", "Basic Miner") }
         )
 
-        // Slow Miner
         MinerCard(
             minerId = "slow_miner",
             name = "SLOW MINER",
             description = "Miner lambat dengan performa lebih baik dari Basic Miner.",
             priceLabel = "100",
-            rewardLabel = "25 NX / 24 JAM",
             accentColor = MinerSlowAccent,
             buttonText = "BELI",
-            onActionClick = { onPurchaseClick("100", "slow_miner", "Slow Miner", "25") }
+            onActionClick = { onPurchaseClick("100", "slow_miner", "Slow Miner") }
         )
 
-        // Fast Miner
         MinerCard(
             minerId = "fast_miner",
             name = "FAST MINER",
             description = "Miner cepat untuk meningkatkan produksi NX secara signifikan.",
             priceLabel = "400",
-            rewardLabel = "120 NX / 24 JAM",
             accentColor = MinerFastAccent,
             buttonText = "BELI",
-            onActionClick = { onPurchaseClick("400", "fast_miner", "Fast Miner", "120") }
+            onActionClick = { onPurchaseClick("400", "fast_miner", "Fast Miner") }
         )
 
-        // Ultra Miner
         MinerCard(
             minerId = "ultra_miner",
             name = "ULTRA MINER",
             description = "Miner kelas tinggi dengan kemampuan produksi NX yang jauh lebih besar.",
             priceLabel = "1500",
-            rewardLabel = "550 NX / 24 JAM",
             accentColor = MinerUltraAccent,
             buttonText = "BELI",
-            onActionClick = { onPurchaseClick("1500", "ultra_miner", "Ultra Miner", "550") }
+            onActionClick = { onPurchaseClick("1500", "ultra_miner", "Ultra Miner") }
         )
 
-        // Void Miner
         MinerCard(
             minerId = "void_miner",
             name = "VOID MINER",
             description = "Miner kelas ekstrem yang menggunakan kekuatan Void untuk menghasilkan NX dalam jumlah besar.",
             priceLabel = "4000",
-            rewardLabel = "2.000 NX / 24 JAM",
             accentColor = MinerVoidAccent,
             buttonText = "BELI",
             isSpecial = true,
-            onActionClick = { onPurchaseClick("4000", "void_miner", "Void Miner", "2000") }
+            onActionClick = { onPurchaseClick("4000", "void_miner", "Void Miner") }
         )
         
         Spacer(modifier = Modifier.height(32.dp))
@@ -404,8 +385,6 @@ fun MinerCard(
     name: String,
     description: String,
     priceLabel: String,
-    rewardLabel: String,
-    extraInfo: String? = null,
     accentColor: Color,
     buttonText: String,
     isSpecial: Boolean = false,
@@ -413,6 +392,10 @@ fun MinerCard(
 ) {
     val bgColor = if (isSpecial) MinerVoidBg else ProfileCardBg
     val strokeColor = accentColor.copy(alpha = if (isSpecial) 0.8f else 0.4f)
+    
+    val hashrate = NoxEconomyConfig.getHashrateForMiner(minerId)
+    val targetReward = NoxEconomyConfig.getTargetRewardForMiner(minerId)
+    val formattedTargetReward = java.text.DecimalFormat("#,###.########", java.text.DecimalFormatSymbols(java.util.Locale("id", "ID"))).format(targetReward)
     
     Card(
         shape = RoundedCornerShape(20.dp),
@@ -468,40 +451,57 @@ fun MinerCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(text = "HARGA", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "HASHRATE", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = if (priceLabel == "GRATIS") priceLabel else java.math.BigDecimal(priceLabel).toShortNXFormat(),
+                        text = NoxEconomyConfig.getHashrateString(hashrate),
                         color = TextPrimary,
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text(text = "PENDAPATAN", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "ESTIMASI REWARD", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = rewardLabel,
+                        text = "${formattedTargetReward} NX",
                         color = accentColor,
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
             
-            if (extraInfo != null) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = extraInfo,
-                    color = TextPrimary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(accentColor.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                        .padding(8.dp)
-                )
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(text = "TIME", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "CALCULATED BY ENGINE",
+                        color = TextPrimary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(text = "HARGA", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (priceLabel == "GRATIS") priceLabel else {
+                            val priceDec = BigDecimal(priceLabel)
+                            val formattedPrice = java.text.DecimalFormat("#,###.########", java.text.DecimalFormatSymbols(java.util.Locale("id", "ID"))).format(priceDec)
+                            "\$formattedPrice NX"
+                        },
+                        color = TextPrimary,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(20.dp))
@@ -515,7 +515,7 @@ fun MinerCard(
                         isProcessing = true
                         onActionClick()
                         coroutineScope.launch {
-                            delay(500) // Prevent double click
+                            delay(500)
                             isProcessing = false
                         }
                     }

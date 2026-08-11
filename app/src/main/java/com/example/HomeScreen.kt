@@ -184,7 +184,7 @@ fun MiningCard() {
                 )
                 
                 Text(
-                    text = "Estimasi Pendapatan: ${miner.reward.toNXFormat()}",
+                    text = "Estimasi Pendapatan: ${miner.reward.toShortNXFormat()}",
                     color = TextSecondary,
                     fontSize = 12.sp
                 )
@@ -708,7 +708,7 @@ fun ActiveMinersCard() {
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Reward: ${miner.reward.toNXFormat()} / ${miner.durationHours} JAM",
+                    text = "Reward: ${miner.reward.toShortNXFormat()} / ${miner.durationHours} JAM",
                     color = TextSecondary,
                     fontSize = 14.sp
                 )
@@ -731,7 +731,7 @@ fun ActiveMinersCard() {
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("CLAIM ${miner.reward.toNXFormat()}", color = Color.Black, fontWeight = FontWeight.Bold)
+                        Text("CLAIM ${miner.reward.toShortNXFormat()}", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
                 } else {
                     val totalDurationMs = miner.durationHours * 60 * 60 * 1000

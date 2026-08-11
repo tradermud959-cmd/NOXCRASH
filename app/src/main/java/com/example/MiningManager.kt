@@ -125,9 +125,9 @@ object MiningManager {
         setMiningStatus(MiningStatus.ACTIVE)
         
         if (id == "free_miner") {
-            HistoryManager.addHistory(HistoryType.MINING, "⛏️ FREE MINER", "Mining dimulai", "+${reward.toNXFormat()} / ${durationHours} JAM")
+            HistoryManager.addHistory(HistoryType.MINING, "⛏️ FREE MINER", "Mining dimulai", "+${reward.toShortNXFormat()} / ${durationHours} JAM")
         } else {
-            HistoryManager.addHistory(HistoryType.MINING, "⛏️ ${name.uppercase()}", "Mining dimulai", "+${reward.toNXFormat()} / ${durationHours} JAM")
+            HistoryManager.addHistory(HistoryType.MINING, "⛏️ ${name.uppercase()}", "Mining dimulai", "+${reward.toShortNXFormat()} / ${durationHours} JAM")
         }
         StatisticsManager.addSession(durationHours)
         
@@ -145,7 +145,7 @@ object MiningManager {
         // Try to add reward to profile balance
         val success = ProfileManager.addBalance(reward)
         if (success) {
-            HistoryManager.addHistory(HistoryType.CLAIM, "💰 REWARD CLAIM", "Reward mining diterima", "+${reward.toNXFormat()}")
+            HistoryManager.addHistory(HistoryType.CLAIM, "💰 REWARD CLAIM", "Reward mining diterima", "+${reward.toShortNXFormat()}")
             StatisticsManager.addReward(reward)
             
             // Reset mining state

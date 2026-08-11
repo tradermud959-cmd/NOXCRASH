@@ -122,7 +122,7 @@ fun AIHistoryCard(item: AIHistoryItem) {
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("HARGA", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Text("${item.price.toNXFormat()}", color = TextPrimary, fontSize = 14.sp)
+                    Text("${item.price.toShortNXFormat()}", color = TextPrimary, fontSize = 14.sp)
                 }
             }
             

@@ -46,7 +46,7 @@ fun AIShopPage(showNotification: (NotificationType, String, String) -> Unit) {
             )
         } else {
             if (AIManager.purchaseAI(config.type, config.name, config.durationDays, config.price)) {
-                HistoryManager.addHistory(HistoryType.PURCHASE, "🤖 ${config.name.uppercase()}", "AI Mode dibeli", "-${config.price.toNXFormat()}")
+                HistoryManager.addHistory(HistoryType.PURCHASE, "🤖 ${config.name.uppercase()}", "AI Mode dibeli", "-${config.price.toShortNXFormat()}")
                 StatisticsManager.addPurchase()
                 showNotification(
                     NotificationType.SUCCESS,
@@ -269,7 +269,7 @@ fun AICard(
                     Text(text = "HARGA", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = java.math.BigDecimal(priceLabel).toNXFormat(),
+                        text = java.math.BigDecimal(priceLabel).toShortNXFormat(),
                         color = TextPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold

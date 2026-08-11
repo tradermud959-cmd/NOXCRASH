@@ -284,7 +284,7 @@ object AIManager {
             if (currentBalance >= price) {
                 if (ProfileManager.updateBalance(price)) {
                     StatisticsManager.addPurchase()
-                    HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 $name", "Pembelian otomatis (AI VOID)", "-${price.toNXFormat()}")
+                    HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 $name", "Pembelian otomatis (AI VOID)", "-${price.toShortNXFormat()}")
                     MiningManager.startMining(id, name, reward, 24)
                     break
                 }

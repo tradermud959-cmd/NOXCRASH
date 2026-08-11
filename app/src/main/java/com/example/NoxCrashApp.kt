@@ -132,6 +132,7 @@ fun NoxCrashApp() {
                     composable("info_app") { InfoAppScreen(navController) }
                     composable("info_nx") { InfoNXScreen(navController) }
                     composable("info_penting") { InfoPentingScreen(navController) }
+                    composable("white_paper") { WhitePaperScreen(navController) }
                     composable("backup") { BackupScreen(navController) }
                     composable("restore") { RestoreScreen(navController) }
                     composable("reset") { ResetScreen(navController) }

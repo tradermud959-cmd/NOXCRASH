@@ -61,6 +61,9 @@ fun SettingsScreen(navController: NavController) {
                 SettingsItem(title = "⚠️ Informasi Penting", description = "Tujuan NoxCrash sebagai game") {
                     navController.navigate("info_penting")
                 }
+                SettingsItem(title = "📄 Alasan Diciptakan", description = "White Paper NoxCrash") {
+                    navController.navigate("white_paper")
+                }
                 
                 Spacer(modifier = Modifier.height(32.dp))
                 SettingsItem(

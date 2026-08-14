@@ -237,7 +237,7 @@ fun ProfileScreen(onOpenDrawer: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = balance,
+                        text = balance.formatNXDisplay(),
                         color = TextPrimary,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold

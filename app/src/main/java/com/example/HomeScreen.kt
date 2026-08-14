@@ -159,7 +159,7 @@ fun MiningCard() {
                 
                 val miner = activeMiner!!
                 val currentReward = miner.calculateCurrentReward(currentTime)
-                val currentRewardString = currentReward.toNXFormat()
+                val currentRewardString = currentReward.toMiningProgressFormat()
                 
                 Text(
                     text = currentRewardString,
@@ -469,7 +469,7 @@ fun ProfileCard() {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = profileData.balance,
+                        text = profileData.balance.formatNXDisplay(),
                         maxLines = 1,
                         softWrap = false,
                         color = TextPrimary,
@@ -767,7 +767,7 @@ fun ActiveMinersCard() {
                 
                 val currentReward = miner.calculateCurrentReward(currentTime)
                 Text(
-                    text = "Reward: ${currentReward.toNXFormat()} / ${miner.targetReward.toShortNXFormat()}",
+                    text = "Reward: ${currentReward.toMiningProgressFormat()} / ${miner.targetReward.toShortNXFormat()}",
                     color = TextSecondary,
                     fontSize = 12.sp
                 )

@@ -95,7 +95,7 @@ fun WithdrawScreen(onOpenDrawer: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "${profileData.balance}",
+                        text = "${profileData.balance.formatNXDisplay()}",
                         color = ColorMining,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.ExtraBold

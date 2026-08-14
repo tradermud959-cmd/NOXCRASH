@@ -35,13 +35,13 @@ fun SettingsScreen(navController: NavController) {
         },
         containerColor = DarkBackground
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 24.dp)
                     .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp)
             ) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text("DATA & SISTEM", color = TextSecondary, fontSize = 14.sp, letterSpacing = 1.sp)

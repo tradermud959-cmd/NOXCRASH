@@ -280,7 +280,7 @@ fun MinerMarketPage(showNotification: (NotificationType, String, String) -> Unit
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = profileData.balance,
+                    text = profileData.balance.formatNXDisplay(),
                     color = TextPrimary,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
@@ -482,7 +482,7 @@ fun MinerCard(
                     Text(text = "TIME", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "CALCULATED BY ENGINE",
+                        text = "UNKNOWN",
                         color = TextPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
@@ -494,8 +494,8 @@ fun MinerCard(
                     Text(
                         text = if (priceLabel == "GRATIS") priceLabel else {
                             val priceDec = BigDecimal(priceLabel)
-                            val formattedPrice = java.text.DecimalFormat("#,###.########", java.text.DecimalFormatSymbols(java.util.Locale("id", "ID"))).format(priceDec)
-                            "\$formattedPrice NX"
+                            val formattedPrice = java.text.DecimalFormat("#,###.##", java.text.DecimalFormatSymbols(java.util.Locale("id", "ID"))).format(priceDec)
+                            "$formattedPrice NX"
                         },
                         color = TextPrimary,
                         fontSize = 16.sp,

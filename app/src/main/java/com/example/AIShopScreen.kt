@@ -96,7 +96,7 @@ fun AIShopPage(showNotification: (NotificationType, String, String) -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "SALDO NX: ${profileData.balance}",
+                        text = "SALDO NX: ${profileData.balance.formatNXDisplay()}",
                         color = TextPrimary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold

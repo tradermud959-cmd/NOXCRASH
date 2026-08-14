@@ -205,7 +205,7 @@ fun MinerMarketPage(showNotification: (NotificationType, String, String) -> Unit
             val success = ProfileManager.updateBalance(priceDec)
             if (success) {
                 val formattedPrice = java.text.DecimalFormat("#,###.########", java.text.DecimalFormatSymbols(java.util.Locale("id", "ID"))).format(priceDec)
-                HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 \${minerName.uppercase()}", "Miner dibeli", "-\${formattedPrice} NX")
+                HistoryManager.addHistory(HistoryType.PURCHASE, "🛒 ${minerName.uppercase()}", "Miner dibeli", "-${formattedPrice} NX")
                 StatisticsManager.addPurchase()
                 
                 val rewardDec = NoxEconomyConfig.getTargetRewardForMiner(minerId)

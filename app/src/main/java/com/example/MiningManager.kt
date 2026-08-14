@@ -79,7 +79,7 @@ object MiningManager {
                     NoxNotificationManager.addNotification(
                         NoxNotificationType.MINER,
                         "MINER SELESAI",
-                        "Proses mining oleh \${miner.name} telah selesai. Cek detail aktivitasmu."
+                        "Proses mining oleh ${miner.name} telah selesai. Cek detail aktivitasmu."
                     )
                 } else {
                     _activeMiner.value = miner
@@ -132,7 +132,7 @@ object MiningManager {
 
         setMiningStatus(MiningStatus.ACTIVE)
         
-        HistoryManager.addHistory(HistoryType.MINING, "⛏️ \${name.uppercase()}", "Mining dimulai", "Target: \${targetReward.toShortNXFormat()}")
+        HistoryManager.addHistory(HistoryType.MINING, "⛏️ ${name.uppercase()}", "Mining dimulai", "Target: ${targetReward.toShortNXFormat()}")
         
         // Add a generic session log since we don't have exact duration anymore
         StatisticsManager.addSession(24) // Dummy duration for backward compatibility
@@ -163,7 +163,7 @@ object MiningManager {
             if (rewardToClaim > BigDecimal.ZERO) {
                 SupplyManager.deductSupply(rewardToClaim)
             }
-            HistoryManager.addHistory(HistoryType.CLAIM, "💰 REWARD CLAIM", "Reward mining diterima", "+\${rewardToClaim.toShortNXFormat()}")
+            HistoryManager.addHistory(HistoryType.CLAIM, "💰 REWARD CLAIM", "Reward mining diterima", "+${rewardToClaim.toShortNXFormat()}")
             StatisticsManager.addReward(rewardToClaim)
             
             _activeMiner.value = null
@@ -194,7 +194,7 @@ object MiningManager {
                 NoxNotificationManager.addNotification(
                     NoxNotificationType.MINER,
                     "MINER SELESAI",
-                    "Proses mining oleh \${miner.name} telah selesai. Cek detail aktivitasmu."
+                    "Proses mining oleh ${miner.name} telah selesai. Cek detail aktivitasmu."
                 )
             }
         }

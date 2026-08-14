@@ -44,7 +44,11 @@ object HistoryManager {
         val json = prefs.getString(KEY_HISTORY, null)
         if (json != null) {
             try {
-                val list = adapter.fromJson(json) ?: emptyList()
+                var list = adapter.fromJson(json) ?: emptyList()
+                // Hapus item riwayat lama yang nyangkut/rusak karena bug literal string sebelumnya
+                list = list.filter { 
+                    !it.title.contains("\${") && !it.valueLabel.contains("\${") && !it.description.contains("\${")
+                }
                 _historyList.value = list
             } catch (e: Exception) {
                 e.printStackTrace()

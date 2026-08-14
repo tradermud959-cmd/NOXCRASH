@@ -97,9 +97,15 @@ fun NoxCrashApp() {
                         },
                         actions = {
                             val hasUnread by NoxNotificationManager.notificationsList.collectAsState()
+                            val canCheckIn by CheckInManager.canCheckInToday.collectAsState()
+                            val lastGachaTime by GachaManager.lastGachaTime.collectAsState()
+                            val canGacha = GachaManager.canPullGacha()
+                            
+                            val unreadCount = hasUnread.size + (if (canCheckIn) 1 else 0) + (if (canGacha) 1 else 0)
+                            
                             IconButton(onClick = { navController.navigate("notifikasi") }) {
-                                if (hasUnread.isNotEmpty()) {
-                                    BadgedBox(badge = { Badge { Text(hasUnread.size.toString()) } }) {
+                                if (unreadCount > 0) {
+                                    BadgedBox(badge = { Badge { Text(unreadCount.toString()) } }) {
                                         Icon(Icons.Default.Notifications, contentDescription = "Notifikasi", tint = ColorNotification)
                                     }
                                 } else {
@@ -138,6 +144,7 @@ fun NoxCrashApp() {
                     composable("reset") { ResetScreen(navController) }
                     composable("withdraw") { WithdrawScreen(onOpenDrawer = { scope.launch { drawerState.open() } }) }
                     composable("gacha_pull") { GachaPullScreen(navController) }
+                    composable("checkin") { CheckInScreen(navController) }
                 }
             }
         }

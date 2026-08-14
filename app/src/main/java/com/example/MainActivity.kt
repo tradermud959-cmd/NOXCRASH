@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
     StatisticsManager.init(this)
     AIManager.init(this)
     GachaManager.init(this)
+    CheckInManager.init(this)
     NoxNotificationManager.cleanOldNotifications()
     
     enableEdgeToEdge()

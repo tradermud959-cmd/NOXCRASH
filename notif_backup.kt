@@ -25,8 +25,6 @@ import com.example.ui.theme.*
 fun NotificationScreen(navController: NavController) {
     val notifications by NoxNotificationManager.notificationsList.collectAsState()
     val canCheckIn by CheckInManager.canCheckInToday.collectAsState()
-    val lastGachaTime by GachaManager.lastGachaTime.collectAsState()
-    val canGacha = GachaManager.canPullGacha()
     
     Scaffold(
         topBar = {
@@ -46,7 +44,7 @@ fun NotificationScreen(navController: NavController) {
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF1B2C22)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(16.dp)
                         .border(1.dp, Color(0xFF00E676), RoundedCornerShape(16.dp))
                 ) {
                     Row(
@@ -70,40 +68,7 @@ fun NotificationScreen(navController: NavController) {
                 }
             }
 
-            if (canGacha) {
-                Card(
-                    onClick = { navController.navigate("gacha_pull") },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1B0B0E)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .border(1.dp, Color(0xFF00E676).copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("📦", fontSize = 32.sp)
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(
-                                "Daily Drop Tersedia!",
-                                color = Color(0xFF00E676),
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 16.sp
-                            )
-                            Text("Buka peti misteri harian sekarang.", color = TextPrimary, fontSize = 13.sp)
-                        }
-                    }
-                }
-            }
-
-            val hasAnyUpdate = canCheckIn || canGacha || notifications.isNotEmpty()
-
-            if (!hasAnyUpdate) {
+            if (notifications.isEmpty()) {
                 Box(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.Center
@@ -139,13 +104,13 @@ fun NotificationScreen(navController: NavController) {
                         )
                     }
                 }
-            } else if (notifications.isNotEmpty()) {
+            } else {
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp, top = 8.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp, top = if (canCheckIn) 0.dp else 16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(notifications, key = { it.id }) { notif ->

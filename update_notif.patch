@@ -1,0 +1,106 @@
+--- app/src/main/java/com/example/NotificationScreen.kt
++++ app/src/main/java/com/example/NotificationScreen.kt
+@@ -19,6 +19,8 @@
+ @Composable
+ fun NotificationScreen(navController: NavController) {
+     val notifications by NoxNotificationManager.notificationsList.collectAsState()
++    val canCheckIn by CheckInManager.canCheckInToday.collectAsState()
++
+     Scaffold(
+         topBar = {
+             TopBarWithBack(title = "NOTIFIKASI", navController = navController, color = Color(0xFFFFD54F))
+@@ -25,8 +27,45 @@
+         },
+         containerColor = DarkBackground
+     ) { paddingValues ->
+-        if (notifications.isEmpty()) {
+-            Box(
++        Column(
++            modifier = Modifier
++                .fillMaxSize()
++                .padding(paddingValues)
++        ) {
++            if (canCheckIn) {
++                Card(
++                    onClick = { navController.navigate("checkin") },
++                    shape = RoundedCornerShape(16.dp),
++                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1B2C22)),
++                    modifier = Modifier
++                        .fillMaxWidth()
++                        .padding(16.dp)
++                        .border(1.dp, Color(0xFF00E676), RoundedCornerShape(16.dp))
++                ) {
++                    Row(
++                        modifier = Modifier
++                            .fillMaxWidth()
++                            .padding(16.dp),
++                        verticalAlignment = Alignment.CenterVertically
++                    ) {
++                        Text("🎁", fontSize = 32.sp)
++                        Spacer(modifier = Modifier.width(16.dp))
++                        Column {
++                            Text(
++                                "Hadiah Harian Tersedia!",
++                                color = Color(0xFF00E676),
++                                fontWeight = FontWeight.ExtraBold,
++                                fontSize = 16.sp
++                            )
++                            Text("Klik untuk klaim bonus check-in.", color = TextPrimary, fontSize = 13.sp)
++                        }
++                    }
++                }
++            }
++
++            if (notifications.isEmpty()) {
++                Box(
++                    modifier = Modifier.weight(1f).fillMaxWidth(),
++                    contentAlignment = Alignment.Center
++                ) {
++                    Column(
++                        horizontalAlignment = Alignment.CenterHorizontally,
++                        modifier = Modifier.padding(24.dp)
++                    ) {
++                        Box(
++                            modifier = Modifier
++                                .size(100.dp)
++                                .background(Color(0xFF161616), RoundedCornerShape(32.dp))
++                                .border(1.dp, Color(0x33FFD54F), RoundedCornerShape(32.dp)),
++                            contentAlignment = Alignment.Center
++                        ) {
++                            Text("✨", fontSize = 48.sp)
++                        }
++                        Spacer(modifier = Modifier.height(32.dp))
++                        Text(
++                            text = "TIDAK ADA KABAR BARU",
++                            color = Color(0xFFFFD54F),
++                            fontWeight = FontWeight.ExtraBold,
++                            fontSize = 18.sp,
++                            letterSpacing = 1.sp
++                        )
++                        Spacer(modifier = Modifier.height(16.dp))
++                        Text(
++                            text = "Semua aktivitas NoxCrash akan muncul di sini\nketika ada sesuatu yang perlu kamu ketahui.",
++                            color = Color(0xFFAAAAAA),
++                            fontSize = 14.sp,
++                            lineHeight = 22.sp,
++                            textAlign = TextAlign.Center
++                        )
++                    }
++                }
++            } else {
++                LazyColumn(
++                    modifier = Modifier
++                        .weight(1f)
++                        .fillMaxWidth()
++                        .padding(horizontal = 16.dp),
++                    contentPadding = PaddingValues(bottom = 16.dp, top = if (canCheckIn) 0.dp else 16.dp),
++                    verticalArrangement = Arrangement.spacedBy(16.dp)
++                ) {
++                    items(notifications, key = { it.id }) { notif ->
++                        NotificationCard(notif)
++                    }
++                }
++            }
++        }
++    }
++}

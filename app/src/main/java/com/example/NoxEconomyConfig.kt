@@ -55,4 +55,28 @@ object NoxEconomyConfig {
     fun getRewardRatePerSecond(hashrate: BigDecimal): BigDecimal {
         return hashrate.divide(NOX_DIFFICULTY, 15, RoundingMode.DOWN)
     }
+
+    fun getMinerName(minerId: String): String {
+        return when (minerId) {
+            "free_miner" -> "FREE MINER"
+            "basic_miner" -> "BASIC MINER"
+            "slow_miner" -> "SLOW MINER"
+            "fast_miner" -> "FAST MINER"
+            "ultra_miner" -> "ULTRA MINER"
+            "void_miner" -> "VOID MINER"
+            else -> "UNKNOWN MINER"
+        }
+    }
+    
+    fun getMinerPrice(minerId: String): BigDecimal {
+        return when (minerId) {
+            "free_miner" -> BigDecimal("0")
+            "basic_miner" -> BigDecimal("25")
+            "slow_miner" -> BigDecimal("100")
+            "fast_miner" -> BigDecimal("400")
+            "ultra_miner" -> BigDecimal("1500")
+            "void_miner" -> BigDecimal("4000")
+            else -> BigDecimal("0")
+        }
+    }
 }

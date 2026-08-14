@@ -137,6 +137,7 @@ fun NoxCrashApp() {
                     composable("restore") { RestoreScreen(navController) }
                     composable("reset") { ResetScreen(navController) }
                     composable("withdraw") { WithdrawScreen(onOpenDrawer = { scope.launch { drawerState.open() } }) }
+                    composable("gacha_pull") { GachaPullScreen(navController) }
                 }
             }
         }

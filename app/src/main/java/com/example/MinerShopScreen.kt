@@ -64,15 +64,23 @@ fun MinerShopScreen(navController: NavController) {
         notificationId++
     }
 
-    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
 
     Scaffold(
         topBar = {
             Column {
                 TopBarWithBack(
-                    title = if (pagerState.currentPage == 0) "MINER SHOP" else "AI MODE", 
+                    title = when (pagerState.currentPage) {
+                        0 -> "MINER SHOP"
+                        1 -> "AI MODE"
+                        else -> "DAILY DROP"
+                    }, 
                     navController = navController, 
-                    color = if (pagerState.currentPage == 0) ColorShop else Color(0xFFE040FB)
+                    color = when (pagerState.currentPage) {
+                        0 -> ColorShop
+                        1 -> Color(0xFFE040FB)
+                        else -> Color(0xFF00E676)
+                    }
                 )
                 TabRow(
                     selectedTabIndex = pagerState.currentPage,
@@ -82,7 +90,11 @@ fun MinerShopScreen(navController: NavController) {
                         if (pagerState.currentPage < tabPositions.size) {
                             TabRowDefaults.SecondaryIndicator(
                                 Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                                color = if (pagerState.currentPage == 0) ColorShop else Color(0xFFE040FB)
+                                color = when (pagerState.currentPage) {
+                                    0 -> ColorShop
+                                    1 -> Color(0xFFE040FB)
+                                    else -> Color(0xFF00E676)
+                                }
                             )
                         }
                     }
@@ -90,12 +102,17 @@ fun MinerShopScreen(navController: NavController) {
                     Tab(
                         selected = pagerState.currentPage == 0,
                         onClick = { coroutineScope.launch { pagerState.animateScrollToPage(0) } },
-                        text = { Text("MINER MARKET", fontWeight = FontWeight.Bold, color = if (pagerState.currentPage == 0) ColorShop else TextSecondary) }
+                        text = { Text("MINER MARKET", fontWeight = FontWeight.Bold, color = if (pagerState.currentPage == 0) ColorShop else TextSecondary, fontSize = 11.sp) }
                     )
                     Tab(
                         selected = pagerState.currentPage == 1,
                         onClick = { coroutineScope.launch { pagerState.animateScrollToPage(1) } },
-                        text = { Text("AI MODE", fontWeight = FontWeight.Bold, color = if (pagerState.currentPage == 1) Color(0xFFE040FB) else TextSecondary) }
+                        text = { Text("AI MODE", fontWeight = FontWeight.Bold, color = if (pagerState.currentPage == 1) Color(0xFFE040FB) else TextSecondary, fontSize = 11.sp) }
+                    )
+                    Tab(
+                        selected = pagerState.currentPage == 2,
+                        onClick = { coroutineScope.launch { pagerState.animateScrollToPage(2) } },
+                        text = { Text("DAILY DROP", fontWeight = FontWeight.Bold, color = if (pagerState.currentPage == 2) Color(0xFF00E676) else TextSecondary, fontSize = 11.sp) }
                     )
                 }
             }
@@ -110,6 +127,7 @@ fun MinerShopScreen(navController: NavController) {
                 when (page) {
                     0 -> MinerMarketPage(showNotification = ::showNotification)
                     1 -> AIShopPage(showNotification = ::showNotification)
+                    2 -> GachaIntroPage(navController)
                 }
             }
             

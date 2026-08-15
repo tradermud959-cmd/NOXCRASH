@@ -374,6 +374,11 @@ fun AIModeCard(navController: NavController) {
 @Composable
 fun ProfileCard() {
     val profileData by ProfileManager.profileData.collectAsState()
+    val userRank by RankManager.userRank.collectAsState()
+
+    LaunchedEffect(profileData.balance, profileData.username) {
+        RankManager.calculateRank(profileData.balance, profileData.username)
+    }
 
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -484,7 +489,7 @@ fun ProfileCard() {
                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
-                        text = "RANK #100",
+                        text = "RANK #${userRank}",
                         color = ColorProfile,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp

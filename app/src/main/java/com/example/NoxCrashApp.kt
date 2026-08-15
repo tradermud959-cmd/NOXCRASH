@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -145,6 +146,7 @@ fun NoxCrashApp() {
                     composable("withdraw") { WithdrawScreen(onOpenDrawer = { scope.launch { drawerState.open() } }) }
                     composable("gacha_pull") { GachaPullScreen(navController) }
                     composable("checkin") { CheckInScreen(navController) }
+                    composable("rank") { RankScreen(onOpenDrawer = { scope.launch { drawerState.open() } }) }
                 }
             }
         }
@@ -176,6 +178,7 @@ fun DrawerContent(
             
             Spacer(modifier = Modifier.height(8.dp))
             DrawerSectionTitle("ACTIVITY")
+            DrawerItem(icon = Icons.Default.Star, title = "Global Rank", route = "rank", currentRoute = currentRoute, onNavigate = onNavigate)
             DrawerItem(icon = Icons.Default.Notifications, title = "Notifikasi", route = "notifikasi", currentRoute = currentRoute, onNavigate = onNavigate)
             DrawerItem(icon = Icons.Default.Info, title = "Statistik", route = "statistik", currentRoute = currentRoute, onNavigate = onNavigate) // Using Info instead of unsupported BarChart
             DrawerItem(icon = Icons.Default.List, title = "Riwayat Miner", route = "riwayat", currentRoute = currentRoute, onNavigate = onNavigate)
